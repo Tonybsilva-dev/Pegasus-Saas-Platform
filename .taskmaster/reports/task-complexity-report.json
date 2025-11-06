@@ -1,453 +1,453 @@
 {
-	"meta": {
-		"generatedAt": "2025-11-06T03:05:37.379Z",
-		"tasksAnalyzed": 55,
-		"totalTasks": 55,
-		"analysisCount": 55,
-		"thresholdScore": 5,
-		"projectName": "Taskmaster",
-		"usedResearch": false
-	},
-	"complexityAnalysis": [
-		{
-			"taskId": 1,
-			"taskTitle": "Configuração Inicial do Projeto com Next.js 15 e React 19",
-			"complexityScore": 2,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Divida a tarefa em: 1. Executar o `create-next-app` com as opções corretas (App Router, TS, Tailwind). 2. Criar a estrutura de diretórios inicial (`src/core`, `src/auth`, `src/events`, `src/ui`, `src/hooks`, `src/lib`). 3. Realizar o primeiro commit e configurar o repositório no GitHub.",
-			"reasoning": "Tarefa de configuração inicial, amplamente automatizada pelo `create-next-app`. A complexidade é baixa, consistindo principalmente em seguir um procedimento padrão e criar a estrutura de pastas."
-		},
-		{
-			"taskId": 2,
-			"taskTitle": "Configuração do Core: Variáveis de Ambiente, Logger e Configurações",
-			"complexityScore": 4,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Detalhe a tarefa em: 1. Implementar a validação de variáveis de ambiente usando `zod`, criando um schema em `src/core/env.ts`. 2. Configurar o logger `pino` em `src/core/logger.ts`, criando uma instância singleton. 3. Centralizar a exportação de configurações e constantes da aplicação a partir do módulo `src/core`.",
-			"reasoning": "Envolve a integração de bibliotecas-chave (`zod`, `pino`) e o estabelecimento de padrões centrais para a aplicação. Embora não seja tecnicamente difícil, a importância de acertar a configuração de ambiente e logging justifica uma pontuação moderada."
-		},
-		{
-			"taskId": 3,
-			"taskTitle": "Instalação e Configuração do Prisma ORM com PostgreSQL",
-			"complexityScore": 3,
-			"recommendedSubtasks": 2,
-			"expansionPrompt": "Divida a tarefa em: 1. Executar `npx prisma init`, configurar a `DATABASE_URL` no arquivo `.env` para a conexão com o PostgreSQL. 2. Criar um arquivo `src/core/prisma.ts` para instanciar e exportar um cliente Prisma singleton, evitando múltiplas conexões em ambiente de desenvolvimento.",
-			"reasoning": "Tarefa de configuração de ferramenta com excelente documentação. A complexidade reside em seguir os passos corretamente e implementar o padrão singleton para o cliente do Prisma, que é uma prática recomendada e crucial para a performance."
-		},
-		{
-			"taskId": 4,
-			"taskTitle": "Definição do Schema Inicial do Prisma: Tenant, User, Role",
-			"complexityScore": 4,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Divida a tarefa em: 1. Definir o modelo `Tenant` e `User` com a relação de pertencimento. 2. Definir o modelo `Role` e a tabela de junção `UsersOnRoles` para a relação N-M com `User`. 3. Gerar e aplicar a migração inicial com `prisma migrate`.",
-			"reasoning": "A definição do schema é fundamental para a arquitetura. A complexidade reside em modelar corretamente as relações (especialmente a de muitos-para-muitos) e garantir que a primeira migração seja limpa e correta."
-		},
-		{
-			"taskId": 5,
-			"taskTitle": "Configuração do Design System: Tailwind CSS v4 e Shadcn UI",
-			"complexityScore": 3,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Divida a tarefa em: 1. Instalar e configurar o Tailwind CSS. 2. Executar a CLI do `shadcn-ui` para inicializar o sistema de design, configurando `globals.css` e `components.json`. 3. Instalar e testar componentes básicos (`Button`, `Card`, `Input`) em uma página de exemplo.",
-			"reasoning": "Processo de configuração altamente automatizado pelas CLIs do Tailwind e Shadcn UI. A complexidade é baixa, envolvendo principalmente decisões de configuração inicial do tema e a verificação da instalação."
-		},
-		{
-			"taskId": 7,
-			"taskTitle": "Criação do Layout Base da Aplicação",
-			"complexityScore": 4,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Divida em: 1. Implementar o `RootLayout` em `src/app/layout.tsx`. 2. Criar o componente `Header` com branding dinâmico. 3. Criar o componente `SideNav` com os links de navegação principais.",
-			"reasoning": "Tarefa de frontend que define a estrutura visual de toda a aplicação. A complexidade é moderada, pois requer a criação de componentes responsivos e a correta estruturação do layout principal com Next.js App Router."
-		},
-		{
-			"taskId": 8,
-			"taskTitle": "Configuração do Auth.js v5 (NextAuth)",
-			"complexityScore": 6,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Detalhe as etapas em: 1. Instalar `auth-js` e `@auth/prisma-adapter` e criar o arquivo de configuração base `src/auth.ts`. 2. Configurar o `PrismaAdapter`. 3. Implementar o callback `jwt` para enriquecer o token com `tenantId` e `role`. 4. Implementar o callback `session` para expor os dados customizados para o cliente.",
-			"reasoning": "A configuração da autenticação é crítica e complexa. Envolve a integração de múltiplas peças, a manipulação de callbacks para customizar o token JWT e a sessão, o que exige um entendimento profundo do fluxo de autenticação."
-		},
-		{
-			"taskId": 9,
-			"taskTitle": "Implementação do Login SSO com Provedor Google",
-			"complexityScore": 4,
-			"recommendedSubtasks": 2,
-			"expansionPrompt": "Divida em: 1. Configurar o `GoogleProvider` no `src/auth.ts` e adicionar as variáveis de ambiente. 2. Adicionar o botão 'Login com Google' na UI de login e testar o fluxo completo.",
-			"reasoning": "Baseando-se na configuração do Auth.js já existente, esta tarefa é de complexidade moderada. O principal esforço está na configuração do provedor no Google Cloud Console e na integração correta no código."
-		},
-		{
-			"taskId": 10,
-			"taskTitle": "Implementação do Login SSO com Provedor Microsoft",
-			"complexityScore": 4,
-			"recommendedSubtasks": 2,
-			"expansionPrompt": "Divida em: 1. Configurar o `MicrosoftEntraIDProvider` no `src/auth.ts` e adicionar as variáveis de ambiente. 2. Adicionar o botão de login da Microsoft na UI e testar o fluxo.",
-			"reasoning": "Semelhante à integração do Google, a complexidade é moderada e focada na configuração correta no portal do Azure e na adição do provedor no Auth.js."
-		},
-		{
-			"taskId": 11,
-			"taskTitle": "Criação do `useAuthStore` com Zustand para Gerenciamento de Estado",
-			"complexityScore": 4,
-			"recommendedSubtasks": 2,
-			"expansionPrompt": "Divida em: 1. Criar o store Zustand com o estado do usuário. 2. Implementar o middleware `persist` com `sessionStorage` e testar o comportamento de recarregamento da página.",
-			"reasoning": "Requer conhecimento de gerenciamento de estado global no lado do cliente e do uso de middleware de persistência. A complexidade está em garantir que o estado seja sincronizado corretamente com a sessão do NextAuth."
-		},
-		{
-			"taskId": 12,
-			"taskTitle": "Desenvolvimento da Página de Login e Componentes de Autenticação",
-			"complexityScore": 4,
-			"recommendedSubtasks": 2,
-			"expansionPrompt": "Divida em: 1. Construir a UI da página `/login` com Shadcn UI. 2. Implementar a lógica de chamada da função `signIn` para cada provedor de SSO.",
-			"reasoning": "Tarefa de UI que conecta o frontend aos mecanismos de autenticação do backend. A complexidade é moderada, focada na construção de uma interface clara e na correta invocação das funções de autenticação."
-		},
-		{
-			"taskId": 13,
-			"taskTitle": "Implementação de Middleware para Isolamento de Tenant",
-			"complexityScore": 7,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Divida em: 1. Criar o arquivo `src/middleware.ts` para interceptar requisições. 2. Implementar a lógica de extração do `tenantId` da sessão. 3. Adicionar lógica de proteção para rotas de API e páginas, bloqueando acesso indevido.",
-			"reasoning": "Esta é uma tarefa de segurança crítica e de alta complexidade. Um erro na implementação pode levar a vazamento de dados entre tenants. Requer um entendimento profundo do middleware do Next.js e do fluxo de autenticação."
-		},
-		{
-			"taskId": 14,
-			"taskTitle": "Implementação da Lógica de Branding Dinâmico",
-			"complexityScore": 5,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Divida em: 1. Criar um endpoint ou estender a sessão para fornecer dados de branding. 2. No layout, aplicar as cores do tenant como variáveis CSS. 3. Criar um componente `TenantLogo` que exibe o logo correto.",
-			"reasoning": "A complexidade está em carregar os dados do tenant de forma eficiente e aplicá-los dinamicamente na UI, o que envolve coordenação entre o servidor e o cliente."
-		},
-		{
-			"taskId": 15,
-			"taskTitle": "API para Gestão de Usuários (Convites e Papéis)",
-			"complexityScore": 6,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Divida em: 1. Endpoint `POST /invite` para criar e enviar convites. 2. Endpoint `PUT /{userId}/role` para alterar papéis. 3. Lógica de geração e validação de token de convite. 4. Implementar proteção de rota (apenas admins do tenant).",
-			"reasoning": "Complexidade moderada a alta devido à lógica de negócio envolvida (tokens de convite), integração com serviço de email e, crucialmente, a implementação correta das regras de autorização."
-		},
-		{
-			"taskId": 16,
-			"taskTitle": "UI para Gestão de Usuários (Painel de Administração)",
-			"complexityScore": 5,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Divida em: 1. Criar tabela para listar usuários com `TanStack Table`. 2. Criar um `Dialog` para o formulário de convite. 3. Integrar com a API usando `TanStack Query` para buscar dados e realizar mutações.",
-			"reasoning": "Envolve a construção de uma UI interativa com múltiplos estados (listagem, formulário, carregamento, erro), o que adiciona complexidade ao gerenciamento do estado do frontend."
-		},
-		{
-			"taskId": 17,
-			"taskTitle": "Configuração da Integração com Resend para Envio de Emails",
-			"complexityScore": 3,
-			"recommendedSubtasks": 2,
-			"expansionPrompt": "Divida a tarefa em: 1. Instalar o SDK do Resend, configurar a `RESEND_API_KEY`. 2. Criar um módulo de serviço em `src/core/services/email.ts` que abstrai a lógica de envio.",
-			"reasoning": "Trata-se da integração de uma API de terceiros bem documentada. A complexidade é baixa, consistindo em instalar um SDK, gerenciar uma chave de API e criar um serviço de abstração simples."
-		},
-		{
-			"taskId": 18,
-			"taskTitle": "Schema do Prisma para Eventos e Modalidades",
-			"complexityScore": 4,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Divida em: 1. Definir os modelos `Event`, `Modality` e `Team`. 2. Estabelecer as relações corretas entre eles (ex: Evento pertence a Tenant, Equipe tem muitos Usuários). 3. Gerar e aplicar a nova migração do Prisma.",
-			"reasoning": "Similar à definição do schema inicial, a complexidade está em modelar corretamente as novas entidades e suas relações com o restante do sistema, garantindo a integridade dos dados."
-		},
-		{
-			"taskId": 19,
-			"taskTitle": "API para CRUD de Modalidades (Admin Global)",
-			"complexityScore": 5,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Divida em: 1. Criar os endpoints CRUD para `/api/modalities`. 2. Implementar a lógica de autorização para permitir acesso apenas a super-administradores. 3. Escrever testes de integração para validar a proteção de rota.",
-			"reasoning": "É um CRUD padrão, mas a complexidade aumenta devido à necessidade de uma camada de autorização distinta para administradores globais, que deve ser cuidadosamente implementada e testada."
-		},
-		{
-			"taskId": 20,
-			"taskTitle": "API para CRUD de Eventos (Torneios)",
-			"complexityScore": 6,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Divida em: 1. Criar os endpoints CRUD para `/api/events`. 2. Garantir que todas as consultas e mutações incluam o filtro `tenantId` para isolamento de dados. 3. Implementar autorização baseada em papel (ex: organizadores podem criar).",
-			"reasoning": "A complexidade é alta devido à necessidade crítica de aplicar o isolamento de tenant em todas as operações de banco de dados para evitar vazamento de dados, além da lógica de autorização baseada em papéis."
-		},
-		{
-			"taskId": 21,
-			"taskTitle": "UI para Criação e Edição de Torneios",
-			"complexityScore": 6,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Divida em: 1. Construir o componente de formulário com componentes do Shadcn UI (incluindo `DatePicker`). 2. Utilizar `react-hook-form` para gerenciamento e validação do formulário. 3. Integrar com `TanStack Query` (`useMutation`) para submeter os dados à API.",
-			"reasoning": "Formulários complexos são desafiadores de implementar. A tarefa envolve gerenciamento de estado do formulário, validação de múltiplos campos e comunicação assíncrona com o backend, justificando a complexidade."
-		},
-		{
-			"taskId": 22,
-			"taskTitle": "UI para Listagem e Detalhes de Torneios",
-			"complexityScore": 5,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Divida em: 1. Desenvolver a página de listagem de eventos com `Card`s. 2. Desenvolver a página de detalhes do evento `[id]`. 3. Utilizar `TanStack Query` (`useQuery`) para buscar os dados e gerenciar estados de carregamento e erro.",
-			"reasoning": "Complexidade moderada. Envolve buscar e apresentar dados, mas também requer uma boa arquitetura de componentes e gerenciamento de estado assíncrono para uma boa experiência do usuário."
-		},
-		{
-			"taskId": 23,
-			"taskTitle": "Configuração do BullMQ com Redis para Jobs em Background",
-			"complexityScore": 7,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Divida a tarefa em: 1. Configurar a conexão com o Redis. 2. Criar a instância da fila `Queue` do BullMQ. 3. Implementar um arquivo de worker (`src/jobs/worker.ts`) que processa os jobs. 4. Criar scripts no `package.json` para iniciar o worker e documentar o deploy.",
-			"reasoning": "Introduz uma nova camada na arquitetura (processamento assíncrono) com uma dependência externa (Redis) e um processo separado. A complexidade vem da configuração, orquestração e considerações de deploy."
-		},
-		{
-			"taskId": 24,
-			"taskTitle": "Lógica para Geração de Chaves: Eliminação Simples",
-			"complexityScore": 6,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Divida em: 1. Implementar o algoritmo de embaralhamento das equipes. 2. Desenvolver a lógica para criar as partidas da primeira rodada, lidando com 'byes'. 3. Escrever testes unitários extensivos para vários números de equipes.",
-			"reasoning": "A complexidade é puramente algorítmica. Requer uma implementação correta e robusta para lidar com todos os casos de borda (ex: número de equipes que não é potência de 2), exigindo testes rigorosos."
-		},
-		{
-			"taskId": 25,
-			"taskTitle": "Lógica para Geração de Chaves: Pontos Corridos (Round Robin)",
-			"complexityScore": 5,
-			"recommendedSubtasks": 2,
-			"expansionPrompt": "Divida em: 1. Implementar o algoritmo de círculo para gerar as rodadas e partidas. 2. Escrever testes unitários para validar a geração de chaves para N equipes.",
-			"reasoning": "Outra tarefa algorítmica, mas o algoritmo de Round Robin é geralmente mais direto de implementar do que a lógica de 'byes' da eliminação simples. A complexidade é moderada."
-		},
-		{
-			"taskId": 26,
-			"taskTitle": "Integração da Geração de Chaves com a API de Eventos",
-			"complexityScore": 6,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Divida em: 1. Criar o endpoint `POST /api/events/{id}/generate-bracket`. 2. Adicionar validação de permissão e estado do evento. 3. Implementar a lógica para adicionar o job correto à fila do BullMQ.",
-			"reasoning": "Ponto de integração crítico entre o frontend/API e o sistema de background. A complexidade está em garantir que a transição seja segura, autorizada e confiável."
-		},
-		{
-			"taskId": 27,
-			"taskTitle": "Schema do Prisma para Partidas e Resultados",
-			"complexityScore": 4,
-			"recommendedSubtasks": 2,
-			"expansionPrompt": "Divida em: 1. Definir o modelo `Match` com suas relações e campos de status. 2. Decidir e implementar o armazenamento de resultados (`MatchResult`). 3. Gerar e aplicar a migração.",
-			"reasoning": "Extensão do schema do banco de dados. Complexidade moderada, pois envolve pensar na estrutura que suportará o andamento dos torneios e seus resultados."
-		},
-		{
-			"taskId": 28,
-			"taskTitle": "API para Agendamento e Atualização de Partidas",
-			"complexityScore": 5,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Divida em: 1. Criar endpoint `PUT /api/matches/{id}`. 2. Implementar a lógica para atualizar agendamento. 3. Implementar a lógica para reportar resultados e atualizar o status da partida.",
-			"reasoning": "CRUD padrão com lógica de negócio adicional. A complexidade está em garantir que as atualizações de estado sejam feitas corretamente e de forma segura (autorização)."
-		},
-		{
-			"taskId": 29,
-			"taskTitle": "UI para Visualização de Chaves de Torneio",
-			"complexityScore": 7,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Divida em: 1. Pesquisar e escolher uma biblioteca de visualização de chaves ou decidir por uma implementação customizada. 2. Criar o componente que recebe os dados e renderiza a chave. 3. Estilizar o componente para ser claro e responsivo.",
-			"reasoning": "A renderização visual de estruturas de dados em árvore (como chaves de torneio) é uma tarefa de UI inerentemente complexa. Exige um bom conhecimento de CSS e/ou a integração cuidadosa de uma biblioteca de terceiros."
-		},
-		{
-			"taskId": 30,
-			"taskTitle": "UI de Calendário para Agendamento de Partidas",
-			"complexityScore": 6,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Divida em: 1. Integrar o `react-day-picker` para mostrar o calendário. 2. Buscar e exibir as partidas nos dias corretos. 3. Implementar a interação (ex: abrir um `Dialog` ao clicar) para agendar/editar partidas.",
-			"reasoning": "Construir uma UI de calendário rica e interativa é complexo. Envolve a integração de uma biblioteca, o gerenciamento de dados de eventos e a criação de fluxos de interação para o usuário."
-		},
-		{
-			"taskId": 31,
-			"taskTitle": "Schema do Prisma para Gamificação (Pontos, Badges)",
-			"complexityScore": 4,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Divida em: 1. Definir o modelo `Badge` e `UserBadge`. 2. Definir o modelo `RankingPoint` com suas relações. 3. Gerar e aplicar a migração.",
-			"reasoning": "Modelagem de dados para um novo domínio. A complexidade é moderada, pois requer o planejamento de uma estrutura que suporte futuras lógicas de gamificação."
-		},
-		{
-			"taskId": 32,
-			"taskTitle": "Serviço de Cálculo de Pontos Pós-Partida",
-			"complexityScore": 6,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Divida em: 1. Criar um `PointsService` com a lógica de cálculo. 2. Integrar o serviço para ser chamado após a finalização de uma partida. 3. Escrever testes unitários para a lógica de cálculo (vitória, derrota, empate).",
-			"reasoning": "Tarefa de lógica de negócio pura. A complexidade está em definir e implementar as regras de pontuação corretamente e garantir que o serviço seja acionado de forma confiável."
-		},
-		{
-			"taskId": 33,
-			"taskTitle": "API para Exibição de Rankings",
-			"complexityScore": 6,
-			"recommendedSubtasks": 2,
-			"expansionPrompt": "Divida em: 1. Criar o endpoint `GET /api/rankings`. 2. Implementar a consulta de agregação com Prisma (`groupBy`, `_sum`) para calcular os rankings de forma performática.",
-			"reasoning": "A complexidade está no lado do banco de dados. Escrever consultas de agregação eficientes, especialmente com grandes volumes de dados, pode ser desafiador e requer otimização."
-		},
-		{
-			"taskId": 34,
-			"taskTitle": "UI para Exibição de Rankings",
-			"complexityScore": 4,
-			"recommendedSubtasks": 2,
-			"expansionPrompt": "Divida em: 1. Construir a página de ranking com um componente `Table`. 2. Usar `TanStack Query` para buscar e exibir os dados do ranking.",
-			"reasoning": "Tarefa de UI relativamente direta, consistindo em exibir dados tabulares. A maior parte da complexidade está no backend (Task 33)."
-		},
-		{
-			"taskId": 35,
-			"taskTitle": "Criação do `useRankingStore` com Zustand",
-			"complexityScore": 3,
-			"recommendedSubtasks": 1,
-			"expansionPrompt": "Crie um store Zustand para armazenar em cache os dados do ranking, de forma a otimizar o acesso por múltiplos componentes.",
-			"reasoning": "Tarefa de baixa complexidade, focada em otimização do lado do cliente. É uma melhoria de performance e UX, mas não uma funcionalidade crítica."
-		},
-		{
-			"taskId": 36,
-			"taskTitle": "Lógica para Concessão Automática de Badges",
-			"complexityScore": 7,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Divida em: 1. Criar um `BadgeService` para encapsular a lógica de verificação. 2. Definir os gatilhos para chamar o serviço (ex: após uma partida, ao entrar em um evento). 3. Implementar a lógica de verificação para múltiplas condições de badges.",
-			"reasoning": "A complexidade é alta devido à natureza da lógica de negócio. Requer um sistema de regras ou listeners para verificar várias condições, o que pode se tornar complexo e difícil de testar."
-		},
-		{
-			"taskId": 37,
-			"taskTitle": "UI para Exibição de Badges e Conquistas do Usuário",
-			"complexityScore": 3,
-			"recommendedSubtasks": 2,
-			"expansionPrompt": "Divida em: 1. Criar um componente de grade para exibir as badges. 2. Usar um `Tooltip` para mostrar os detalhes da badge ao passar o mouse.",
-			"reasoning": "Tarefa de UI de baixa complexidade, focada em exibir uma coleção de imagens e informações associadas."
-		},
-		{
-			"taskId": 38,
-			"taskTitle": "API e Schema para Campanhas Temáticas",
-			"complexityScore": 5,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Divida em: 1. Estender o schema do Prisma com o modelo `Campaign`. 2. Criar endpoints CRUD para gerenciar campanhas. 3. Integrar a lógica da campanha (ex: multiplicador de pontos) no `PointsService`.",
-			"reasoning": "Complexidade moderada. Envolve modelagem de dados, CRUD e, mais importante, a integração da lógica da campanha em outros serviços existentes, como o de cálculo de pontos."
-		},
-		{
-			"taskId": 39,
-			"taskTitle": "Desenvolvimento da Página Pública de Resultados",
-			"complexityScore": 6,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Divida em: 1. Criar a nova rota e página pública `/[tenantSlug]/events/[eventId]`. 2. Implementar a busca de dados no servidor (SSR/SSG). 3. Desenvolver um layout público separado que não requer autenticação.",
-			"reasoning": "A complexidade vem da necessidade de renderização no servidor para SEO e performance, além de criar uma visualização de dados que seja pública e segura (não expondo informações sensíveis)."
-		},
-		{
-			"taskId": 40,
-			"taskTitle": "Implementação de Meta Tags para SEO e OpenGraph",
-			"complexityScore": 4,
-			"recommendedSubtasks": 2,
-			"expansionPrompt": "Divida em: 1. Usar a função `generateMetadata` do Next.js na página pública do evento. 2. Popular dinamicamente as tags com os dados do evento.",
-			"reasoning": "Tarefa de complexidade moderada. A mecânica é fornecida pelo Next.js, mas requer o carregamento de dados e a formatação correta das strings para as meta tags."
-		},
-		{
-			"taskId": 41,
-			"taskTitle": "API e Schema para o Feed Interno Multimídia",
-			"complexityScore": 6,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Divida em: 1. Definir os modelos `Post` e `Comment` no Prisma. 2. Criar API para criar posts (considerando a mídia). 3. Criar API para listar posts com paginação. 4. Criar API para adicionar comentários.",
-			"reasoning": "Desenvolvimento de uma feature completa com modelagem de dados e múltiplos endpoints. A paginação e o tratamento de uploads de mídia adicionam complexidade."
-		},
-		{
-			"taskId": 42,
-			"taskTitle": "Integração com Cloudflare R2/AWS S3 para Upload de Imagens",
-			"complexityScore": 7,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Divida em: 1. Configurar o bucket e as políticas de CORS. 2. Criar um endpoint `POST /api/upload-url` para gerar URLs pré-assinadas. 3. Configurar o SDK da AWS com as credenciais.",
-			"reasoning": "Tarefa de infraestrutura e segurança complexa. A geração de URLs pré-assinadas e a configuração correta de CORS são cruciais para a segurança e podem ser difíceis de depurar."
-		},
-		{
-			"taskId": 45,
-			"taskTitle": "UI do Feed Interno com Upload e Exibição de Mídia",
-			"complexityScore": 7,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Divida em: 1. Desenvolver o formulário de criação de post. 2. Implementar o fluxo de upload em duas etapas (obter URL, fazer upload). 3. Criar a lista de posts com rolagem infinita usando `useInfiniteQuery`. 4. Renderizar os diferentes tipos de mídia.",
-			"reasoning": "UI altamente complexa que coordena um fluxo de upload assíncrono, gerenciamento de estado otimista e rolagem infinita, representando um desafio significativo de frontend."
-		},
-		{
-			"taskId": 46,
-			"taskTitle": "Configuração do OneSignal para Notificações Push",
-			"complexityScore": 5,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Divida em: 1. Configurar o SDK Web do OneSignal no cliente e o fluxo de permissão. 2. Criar um serviço de backend para enviar notificações via API REST. 3. Implementar a associação entre o ID do usuário da app e o ID do OneSignal.",
-			"reasoning": "A tarefa envolve integração no frontend e backend. A complexidade é moderada devido à necessidade de coordenar o fluxo de permissão do usuário com a lógica de envio do servidor."
-		},
-		{
-			"taskId": 47,
-			"taskTitle": "Lógica para Disparo de Notificações (Push e Email)",
-			"complexityScore": 7,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Divida em: 1. Criar um `NotificationService` central que abstrai os canais (email, push). 2. Identificar os pontos de gatilho na aplicação (ex: partida agendada) e integrar o serviço. 3. Utilizar BullMQ para enfileirar o envio de notificações de forma assíncrona.",
-			"reasoning": "Ponto de integração complexo que orquestra múltiplos serviços (email, push, jobs). A complexidade está em criar um sistema confiável e desacoplado para o envio de notificações."
-		},
-		{
-			"taskId": 48,
-			"taskTitle": "Integração com Stripe para Gestão de Planos e Assinaturas",
-			"complexityScore": 5,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Divida em: 1. Configurar os produtos e preços no dashboard do Stripe. 2. Instalar o SDK do Stripe e configurar as chaves de API. 3. Criar um script para sincronizar/verificar os produtos via API.",
-			"reasoning": "A configuração do Stripe é multifacetada, envolvendo tanto o dashboard quanto o código. A complexidade é moderada, pois exige um entendimento do modelo de dados do Stripe (Produtos, Preços, Clientes)."
-		},
-		{
-			"taskId": 49,
-			"taskTitle": "API para Criação de Sessão de Checkout do Stripe",
-			"complexityScore": 6,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Divida em: 1. Criar endpoint para `create-checkout-session`. 2. Implementar a lógica para criar ou reutilizar um `customerId` do Stripe. 3. Associar o `tenantId` à sessão usando `client_reference_id`.",
-			"reasoning": "Interação crítica com a API do Stripe. A complexidade está em passar os dados corretos para o Stripe, especialmente o `client_reference_id`, que é essencial para o webhook funcionar."
-		},
-		{
-			"taskId": 50,
-			"taskTitle": "Webhook para Eventos do Stripe",
-			"complexityScore": 8,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Divida em: 1. Criar o endpoint do webhook. 2. Implementar a verificação de assinatura do Stripe para segurança. 3. Implementar a lógica para o evento `checkout.session.completed` para provisionar o acesso. 4. Implementar a lógica para outros eventos (ex: `customer.subscription.deleted`).",
-			"reasoning": "Uma das tarefas mais complexas e críticas. O webhook deve ser extremamente confiável e seguro. Erros aqui podem levar a problemas de faturamento. A depuração também é desafiadora."
-		},
-		{
-			"taskId": 51,
-			"taskTitle": "UI do Painel de Billing e Planos",
-			"complexityScore": 5,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Divida em: 1. Desenvolver a UI para exibir os planos disponíveis. 2. Implementar a chamada à API para criar a sessão de checkout e redirecionar o usuário. 3. Adicionar um botão para o portal do cliente do Stripe.",
-			"reasoning": "UI de complexidade moderada que serve como a porta de entrada para o fluxo de pagamento. Requer uma boa apresentação dos planos e uma integração suave com a API de checkout."
-		},
-		{
-			"taskId": 52,
-			"taskTitle": "Integração com Sentry para Monitoramento de Erros",
-			"complexityScore": 3,
-			"recommendedSubtasks": 2,
-			"expansionPrompt": "Divida em: 1. Executar o wizard do Sentry para configuração automática. 2. Verificar a configuração de envio de source maps e testar o envio de um erro.",
-			"reasoning": "Tarefa de baixa complexidade, pois o processo é amplamente automatizado pelas ferramentas do Sentry. O principal esforço é a verificação."
-		},
-		{
-			"taskId": 53,
-			"taskTitle": "Configuração de Logs com Loki e Visualização no Grafana",
-			"complexityScore": 6,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Divida em: 1. Configurar um transportador no Pino para enviar logs para o Loki. 2. Configurar o agente de coleta de logs (ex: Promtail). 3. Adicionar o Loki como fonte de dados no Grafana. 4. Criar um dashboard inicial no Grafana.",
-			"reasoning": "Tarefa de infraestrutura que vai além do código da aplicação. A complexidade está em configurar corretamente toda a cadeia de observabilidade, do log gerado à visualização."
-		},
-		{
-			"taskId": 54,
-			"taskTitle": "Criação do Painel Multi-Tenant para Agências",
-			"complexityScore": 8,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Divida em: 1. Estender o modelo de dados para suportar a relação Agência-Tenant. 2. Criar o painel de visualização para o admin da agência. 3. Implementar a lógica de 'personificação' ou troca de tenant. 4. Refatorar o middleware de autorização para suportar este novo papel.",
-			"reasoning": "Funcionalidade arquiteturalmente complexa. Introduz um novo modelo de acesso que impacta a lógica de autorização em toda a aplicação. A 'personificação' é um recurso complexo e sensível em termos de segurança."
-		},
-		{
-			"taskId": 55,
-			"taskTitle": "Configuração dos Testes E2E com Playwright",
-			"complexityScore": 5,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Divida em: 1. Executar `npm init playwright` e configurar o `playwright.config.ts`. 2. Criar um fluxo reutilizável para autenticar um usuário de teste. 3. Escrever o primeiro teste E2E para o fluxo de autenticação. 4. Integrar a execução dos testes no pipeline de CI/CD.",
-			"reasoning": "A configuração inicial é simples, mas a complexidade real está em escrever testes E2E robustos, especialmente o fluxo de autenticação, e integrá-los ao pipeline de CI/CD."
-		},
-		{
-			"taskId": 6,
-			"taskTitle": "",
-			"complexityScore": 5,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Break down this task with a focus on .",
-			"reasoning": "Automatically added due to missing analysis in AI response."
-		},
-		{
-			"taskId": 43,
-			"taskTitle": "",
-			"complexityScore": 5,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Break down this task with a focus on .",
-			"reasoning": "Automatically added due to missing analysis in AI response."
-		},
-		{
-			"taskId": 44,
-			"taskTitle": "",
-			"complexityScore": 5,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Break down this task with a focus on .",
-			"reasoning": "Automatically added due to missing analysis in AI response."
-		}
-	]
+  "meta": {
+    "generatedAt": "2025-11-06T03:05:37.379Z",
+    "tasksAnalyzed": 55,
+    "totalTasks": 55,
+    "analysisCount": 55,
+    "thresholdScore": 5,
+    "projectName": "Taskmaster",
+    "usedResearch": false
+  },
+  "complexityAnalysis": [
+    {
+      "taskId": 1,
+      "taskTitle": "Configuração Inicial do Projeto com Next.js 15 e React 19",
+      "complexityScore": 2,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Divida a tarefa em: 1. Executar o `create-next-app` com as opções corretas (App Router, TS, Tailwind). 2. Criar a estrutura de diretórios inicial (`src/core`, `src/auth`, `src/events`, `src/ui`, `src/hooks`, `src/lib`). 3. Realizar o primeiro commit e configurar o repositório no GitHub.",
+      "reasoning": "Tarefa de configuração inicial, amplamente automatizada pelo `create-next-app`. A complexidade é baixa, consistindo principalmente em seguir um procedimento padrão e criar a estrutura de pastas."
+    },
+    {
+      "taskId": 2,
+      "taskTitle": "Configuração do Core: Variáveis de Ambiente, Logger e Configurações",
+      "complexityScore": 4,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Detalhe a tarefa em: 1. Implementar a validação de variáveis de ambiente usando `zod`, criando um schema em `src/core/env.ts`. 2. Configurar o logger `pino` em `src/core/logger.ts`, criando uma instância singleton. 3. Centralizar a exportação de configurações e constantes da aplicação a partir do módulo `src/core`.",
+      "reasoning": "Envolve a integração de bibliotecas-chave (`zod`, `pino`) e o estabelecimento de padrões centrais para a aplicação. Embora não seja tecnicamente difícil, a importância de acertar a configuração de ambiente e logging justifica uma pontuação moderada."
+    },
+    {
+      "taskId": 3,
+      "taskTitle": "Instalação e Configuração do Prisma ORM com PostgreSQL",
+      "complexityScore": 3,
+      "recommendedSubtasks": 2,
+      "expansionPrompt": "Divida a tarefa em: 1. Executar `npx prisma init`, configurar a `DATABASE_URL` no arquivo `.env` para a conexão com o PostgreSQL. 2. Criar um arquivo `src/core/prisma.ts` para instanciar e exportar um cliente Prisma singleton, evitando múltiplas conexões em ambiente de desenvolvimento.",
+      "reasoning": "Tarefa de configuração de ferramenta com excelente documentação. A complexidade reside em seguir os passos corretamente e implementar o padrão singleton para o cliente do Prisma, que é uma prática recomendada e crucial para a performance."
+    },
+    {
+      "taskId": 4,
+      "taskTitle": "Definição do Schema Inicial do Prisma: Tenant, User, Role",
+      "complexityScore": 4,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Divida a tarefa em: 1. Definir o modelo `Tenant` e `User` com a relação de pertencimento. 2. Definir o modelo `Role` e a tabela de junção `UsersOnRoles` para a relação N-M com `User`. 3. Gerar e aplicar a migração inicial com `prisma migrate`.",
+      "reasoning": "A definição do schema é fundamental para a arquitetura. A complexidade reside em modelar corretamente as relações (especialmente a de muitos-para-muitos) e garantir que a primeira migração seja limpa e correta."
+    },
+    {
+      "taskId": 5,
+      "taskTitle": "Configuração do Design System: Tailwind CSS v4 e Shadcn UI",
+      "complexityScore": 3,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Divida a tarefa em: 1. Instalar e configurar o Tailwind CSS. 2. Executar a CLI do `shadcn-ui` para inicializar o sistema de design, configurando `globals.css` e `components.json`. 3. Instalar e testar componentes básicos (`Button`, `Card`, `Input`) em uma página de exemplo.",
+      "reasoning": "Processo de configuração altamente automatizado pelas CLIs do Tailwind e Shadcn UI. A complexidade é baixa, envolvendo principalmente decisões de configuração inicial do tema e a verificação da instalação."
+    },
+    {
+      "taskId": 7,
+      "taskTitle": "Criação do Layout Base da Aplicação",
+      "complexityScore": 4,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Divida em: 1. Implementar o `RootLayout` em `src/app/layout.tsx`. 2. Criar o componente `Header` com branding dinâmico. 3. Criar o componente `SideNav` com os links de navegação principais.",
+      "reasoning": "Tarefa de frontend que define a estrutura visual de toda a aplicação. A complexidade é moderada, pois requer a criação de componentes responsivos e a correta estruturação do layout principal com Next.js App Router."
+    },
+    {
+      "taskId": 8,
+      "taskTitle": "Configuração do Auth.js v5 (NextAuth)",
+      "complexityScore": 6,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Detalhe as etapas em: 1. Instalar `auth-js` e `@auth/prisma-adapter` e criar o arquivo de configuração base `src/auth.ts`. 2. Configurar o `PrismaAdapter`. 3. Implementar o callback `jwt` para enriquecer o token com `tenantId` e `role`. 4. Implementar o callback `session` para expor os dados customizados para o cliente.",
+      "reasoning": "A configuração da autenticação é crítica e complexa. Envolve a integração de múltiplas peças, a manipulação de callbacks para customizar o token JWT e a sessão, o que exige um entendimento profundo do fluxo de autenticação."
+    },
+    {
+      "taskId": 9,
+      "taskTitle": "Implementação do Login SSO com Provedor Google",
+      "complexityScore": 4,
+      "recommendedSubtasks": 2,
+      "expansionPrompt": "Divida em: 1. Configurar o `GoogleProvider` no `src/auth.ts` e adicionar as variáveis de ambiente. 2. Adicionar o botão 'Login com Google' na UI de login e testar o fluxo completo.",
+      "reasoning": "Baseando-se na configuração do Auth.js já existente, esta tarefa é de complexidade moderada. O principal esforço está na configuração do provedor no Google Cloud Console e na integração correta no código."
+    },
+    {
+      "taskId": 10,
+      "taskTitle": "Implementação do Login SSO com Provedor Microsoft",
+      "complexityScore": 4,
+      "recommendedSubtasks": 2,
+      "expansionPrompt": "Divida em: 1. Configurar o `MicrosoftEntraIDProvider` no `src/auth.ts` e adicionar as variáveis de ambiente. 2. Adicionar o botão de login da Microsoft na UI e testar o fluxo.",
+      "reasoning": "Semelhante à integração do Google, a complexidade é moderada e focada na configuração correta no portal do Azure e na adição do provedor no Auth.js."
+    },
+    {
+      "taskId": 11,
+      "taskTitle": "Criação do `useAuthStore` com Zustand para Gerenciamento de Estado",
+      "complexityScore": 4,
+      "recommendedSubtasks": 2,
+      "expansionPrompt": "Divida em: 1. Criar o store Zustand com o estado do usuário. 2. Implementar o middleware `persist` com `sessionStorage` e testar o comportamento de recarregamento da página.",
+      "reasoning": "Requer conhecimento de gerenciamento de estado global no lado do cliente e do uso de middleware de persistência. A complexidade está em garantir que o estado seja sincronizado corretamente com a sessão do NextAuth."
+    },
+    {
+      "taskId": 12,
+      "taskTitle": "Desenvolvimento da Página de Login e Componentes de Autenticação",
+      "complexityScore": 4,
+      "recommendedSubtasks": 2,
+      "expansionPrompt": "Divida em: 1. Construir a UI da página `/login` com Shadcn UI. 2. Implementar a lógica de chamada da função `signIn` para cada provedor de SSO.",
+      "reasoning": "Tarefa de UI que conecta o frontend aos mecanismos de autenticação do backend. A complexidade é moderada, focada na construção de uma interface clara e na correta invocação das funções de autenticação."
+    },
+    {
+      "taskId": 13,
+      "taskTitle": "Implementação de Middleware para Isolamento de Tenant",
+      "complexityScore": 7,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Divida em: 1. Criar o arquivo `src/middleware.ts` para interceptar requisições. 2. Implementar a lógica de extração do `tenantId` da sessão. 3. Adicionar lógica de proteção para rotas de API e páginas, bloqueando acesso indevido.",
+      "reasoning": "Esta é uma tarefa de segurança crítica e de alta complexidade. Um erro na implementação pode levar a vazamento de dados entre tenants. Requer um entendimento profundo do middleware do Next.js e do fluxo de autenticação."
+    },
+    {
+      "taskId": 14,
+      "taskTitle": "Implementação da Lógica de Branding Dinâmico",
+      "complexityScore": 5,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Divida em: 1. Criar um endpoint ou estender a sessão para fornecer dados de branding. 2. No layout, aplicar as cores do tenant como variáveis CSS. 3. Criar um componente `TenantLogo` que exibe o logo correto.",
+      "reasoning": "A complexidade está em carregar os dados do tenant de forma eficiente e aplicá-los dinamicamente na UI, o que envolve coordenação entre o servidor e o cliente."
+    },
+    {
+      "taskId": 15,
+      "taskTitle": "API para Gestão de Usuários (Convites e Papéis)",
+      "complexityScore": 6,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Divida em: 1. Endpoint `POST /invite` para criar e enviar convites. 2. Endpoint `PUT /{userId}/role` para alterar papéis. 3. Lógica de geração e validação de token de convite. 4. Implementar proteção de rota (apenas admins do tenant).",
+      "reasoning": "Complexidade moderada a alta devido à lógica de negócio envolvida (tokens de convite), integração com serviço de email e, crucialmente, a implementação correta das regras de autorização."
+    },
+    {
+      "taskId": 16,
+      "taskTitle": "UI para Gestão de Usuários (Painel de Administração)",
+      "complexityScore": 5,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Divida em: 1. Criar tabela para listar usuários com `TanStack Table`. 2. Criar um `Dialog` para o formulário de convite. 3. Integrar com a API usando `TanStack Query` para buscar dados e realizar mutações.",
+      "reasoning": "Envolve a construção de uma UI interativa com múltiplos estados (listagem, formulário, carregamento, erro), o que adiciona complexidade ao gerenciamento do estado do frontend."
+    },
+    {
+      "taskId": 17,
+      "taskTitle": "Configuração da Integração com Resend para Envio de Emails",
+      "complexityScore": 3,
+      "recommendedSubtasks": 2,
+      "expansionPrompt": "Divida a tarefa em: 1. Instalar o SDK do Resend, configurar a `RESEND_API_KEY`. 2. Criar um módulo de serviço em `src/core/services/email.ts` que abstrai a lógica de envio.",
+      "reasoning": "Trata-se da integração de uma API de terceiros bem documentada. A complexidade é baixa, consistindo em instalar um SDK, gerenciar uma chave de API e criar um serviço de abstração simples."
+    },
+    {
+      "taskId": 18,
+      "taskTitle": "Schema do Prisma para Eventos e Modalidades",
+      "complexityScore": 4,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Divida em: 1. Definir os modelos `Event`, `Modality` e `Team`. 2. Estabelecer as relações corretas entre eles (ex: Evento pertence a Tenant, Equipe tem muitos Usuários). 3. Gerar e aplicar a nova migração do Prisma.",
+      "reasoning": "Similar à definição do schema inicial, a complexidade está em modelar corretamente as novas entidades e suas relações com o restante do sistema, garantindo a integridade dos dados."
+    },
+    {
+      "taskId": 19,
+      "taskTitle": "API para CRUD de Modalidades (Admin Global)",
+      "complexityScore": 5,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Divida em: 1. Criar os endpoints CRUD para `/api/modalities`. 2. Implementar a lógica de autorização para permitir acesso apenas a super-administradores. 3. Escrever testes de integração para validar a proteção de rota.",
+      "reasoning": "É um CRUD padrão, mas a complexidade aumenta devido à necessidade de uma camada de autorização distinta para administradores globais, que deve ser cuidadosamente implementada e testada."
+    },
+    {
+      "taskId": 20,
+      "taskTitle": "API para CRUD de Eventos (Torneios)",
+      "complexityScore": 6,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Divida em: 1. Criar os endpoints CRUD para `/api/events`. 2. Garantir que todas as consultas e mutações incluam o filtro `tenantId` para isolamento de dados. 3. Implementar autorização baseada em papel (ex: organizadores podem criar).",
+      "reasoning": "A complexidade é alta devido à necessidade crítica de aplicar o isolamento de tenant em todas as operações de banco de dados para evitar vazamento de dados, além da lógica de autorização baseada em papéis."
+    },
+    {
+      "taskId": 21,
+      "taskTitle": "UI para Criação e Edição de Torneios",
+      "complexityScore": 6,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Divida em: 1. Construir o componente de formulário com componentes do Shadcn UI (incluindo `DatePicker`). 2. Utilizar `react-hook-form` para gerenciamento e validação do formulário. 3. Integrar com `TanStack Query` (`useMutation`) para submeter os dados à API.",
+      "reasoning": "Formulários complexos são desafiadores de implementar. A tarefa envolve gerenciamento de estado do formulário, validação de múltiplos campos e comunicação assíncrona com o backend, justificando a complexidade."
+    },
+    {
+      "taskId": 22,
+      "taskTitle": "UI para Listagem e Detalhes de Torneios",
+      "complexityScore": 5,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Divida em: 1. Desenvolver a página de listagem de eventos com `Card`s. 2. Desenvolver a página de detalhes do evento `[id]`. 3. Utilizar `TanStack Query` (`useQuery`) para buscar os dados e gerenciar estados de carregamento e erro.",
+      "reasoning": "Complexidade moderada. Envolve buscar e apresentar dados, mas também requer uma boa arquitetura de componentes e gerenciamento de estado assíncrono para uma boa experiência do usuário."
+    },
+    {
+      "taskId": 23,
+      "taskTitle": "Configuração do BullMQ com Redis para Jobs em Background",
+      "complexityScore": 7,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Divida a tarefa em: 1. Configurar a conexão com o Redis. 2. Criar a instância da fila `Queue` do BullMQ. 3. Implementar um arquivo de worker (`src/jobs/worker.ts`) que processa os jobs. 4. Criar scripts no `package.json` para iniciar o worker e documentar o deploy.",
+      "reasoning": "Introduz uma nova camada na arquitetura (processamento assíncrono) com uma dependência externa (Redis) e um processo separado. A complexidade vem da configuração, orquestração e considerações de deploy."
+    },
+    {
+      "taskId": 24,
+      "taskTitle": "Lógica para Geração de Chaves: Eliminação Simples",
+      "complexityScore": 6,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Divida em: 1. Implementar o algoritmo de embaralhamento das equipes. 2. Desenvolver a lógica para criar as partidas da primeira rodada, lidando com 'byes'. 3. Escrever testes unitários extensivos para vários números de equipes.",
+      "reasoning": "A complexidade é puramente algorítmica. Requer uma implementação correta e robusta para lidar com todos os casos de borda (ex: número de equipes que não é potência de 2), exigindo testes rigorosos."
+    },
+    {
+      "taskId": 25,
+      "taskTitle": "Lógica para Geração de Chaves: Pontos Corridos (Round Robin)",
+      "complexityScore": 5,
+      "recommendedSubtasks": 2,
+      "expansionPrompt": "Divida em: 1. Implementar o algoritmo de círculo para gerar as rodadas e partidas. 2. Escrever testes unitários para validar a geração de chaves para N equipes.",
+      "reasoning": "Outra tarefa algorítmica, mas o algoritmo de Round Robin é geralmente mais direto de implementar do que a lógica de 'byes' da eliminação simples. A complexidade é moderada."
+    },
+    {
+      "taskId": 26,
+      "taskTitle": "Integração da Geração de Chaves com a API de Eventos",
+      "complexityScore": 6,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Divida em: 1. Criar o endpoint `POST /api/events/{id}/generate-bracket`. 2. Adicionar validação de permissão e estado do evento. 3. Implementar a lógica para adicionar o job correto à fila do BullMQ.",
+      "reasoning": "Ponto de integração crítico entre o frontend/API e o sistema de background. A complexidade está em garantir que a transição seja segura, autorizada e confiável."
+    },
+    {
+      "taskId": 27,
+      "taskTitle": "Schema do Prisma para Partidas e Resultados",
+      "complexityScore": 4,
+      "recommendedSubtasks": 2,
+      "expansionPrompt": "Divida em: 1. Definir o modelo `Match` com suas relações e campos de status. 2. Decidir e implementar o armazenamento de resultados (`MatchResult`). 3. Gerar e aplicar a migração.",
+      "reasoning": "Extensão do schema do banco de dados. Complexidade moderada, pois envolve pensar na estrutura que suportará o andamento dos torneios e seus resultados."
+    },
+    {
+      "taskId": 28,
+      "taskTitle": "API para Agendamento e Atualização de Partidas",
+      "complexityScore": 5,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Divida em: 1. Criar endpoint `PUT /api/matches/{id}`. 2. Implementar a lógica para atualizar agendamento. 3. Implementar a lógica para reportar resultados e atualizar o status da partida.",
+      "reasoning": "CRUD padrão com lógica de negócio adicional. A complexidade está em garantir que as atualizações de estado sejam feitas corretamente e de forma segura (autorização)."
+    },
+    {
+      "taskId": 29,
+      "taskTitle": "UI para Visualização de Chaves de Torneio",
+      "complexityScore": 7,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Divida em: 1. Pesquisar e escolher uma biblioteca de visualização de chaves ou decidir por uma implementação customizada. 2. Criar o componente que recebe os dados e renderiza a chave. 3. Estilizar o componente para ser claro e responsivo.",
+      "reasoning": "A renderização visual de estruturas de dados em árvore (como chaves de torneio) é uma tarefa de UI inerentemente complexa. Exige um bom conhecimento de CSS e/ou a integração cuidadosa de uma biblioteca de terceiros."
+    },
+    {
+      "taskId": 30,
+      "taskTitle": "UI de Calendário para Agendamento de Partidas",
+      "complexityScore": 6,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Divida em: 1. Integrar o `react-day-picker` para mostrar o calendário. 2. Buscar e exibir as partidas nos dias corretos. 3. Implementar a interação (ex: abrir um `Dialog` ao clicar) para agendar/editar partidas.",
+      "reasoning": "Construir uma UI de calendário rica e interativa é complexo. Envolve a integração de uma biblioteca, o gerenciamento de dados de eventos e a criação de fluxos de interação para o usuário."
+    },
+    {
+      "taskId": 31,
+      "taskTitle": "Schema do Prisma para Gamificação (Pontos, Badges)",
+      "complexityScore": 4,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Divida em: 1. Definir o modelo `Badge` e `UserBadge`. 2. Definir o modelo `RankingPoint` com suas relações. 3. Gerar e aplicar a migração.",
+      "reasoning": "Modelagem de dados para um novo domínio. A complexidade é moderada, pois requer o planejamento de uma estrutura que suporte futuras lógicas de gamificação."
+    },
+    {
+      "taskId": 32,
+      "taskTitle": "Serviço de Cálculo de Pontos Pós-Partida",
+      "complexityScore": 6,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Divida em: 1. Criar um `PointsService` com a lógica de cálculo. 2. Integrar o serviço para ser chamado após a finalização de uma partida. 3. Escrever testes unitários para a lógica de cálculo (vitória, derrota, empate).",
+      "reasoning": "Tarefa de lógica de negócio pura. A complexidade está em definir e implementar as regras de pontuação corretamente e garantir que o serviço seja acionado de forma confiável."
+    },
+    {
+      "taskId": 33,
+      "taskTitle": "API para Exibição de Rankings",
+      "complexityScore": 6,
+      "recommendedSubtasks": 2,
+      "expansionPrompt": "Divida em: 1. Criar o endpoint `GET /api/rankings`. 2. Implementar a consulta de agregação com Prisma (`groupBy`, `_sum`) para calcular os rankings de forma performática.",
+      "reasoning": "A complexidade está no lado do banco de dados. Escrever consultas de agregação eficientes, especialmente com grandes volumes de dados, pode ser desafiador e requer otimização."
+    },
+    {
+      "taskId": 34,
+      "taskTitle": "UI para Exibição de Rankings",
+      "complexityScore": 4,
+      "recommendedSubtasks": 2,
+      "expansionPrompt": "Divida em: 1. Construir a página de ranking com um componente `Table`. 2. Usar `TanStack Query` para buscar e exibir os dados do ranking.",
+      "reasoning": "Tarefa de UI relativamente direta, consistindo em exibir dados tabulares. A maior parte da complexidade está no backend (Task 33)."
+    },
+    {
+      "taskId": 35,
+      "taskTitle": "Criação do `useRankingStore` com Zustand",
+      "complexityScore": 3,
+      "recommendedSubtasks": 1,
+      "expansionPrompt": "Crie um store Zustand para armazenar em cache os dados do ranking, de forma a otimizar o acesso por múltiplos componentes.",
+      "reasoning": "Tarefa de baixa complexidade, focada em otimização do lado do cliente. É uma melhoria de performance e UX, mas não uma funcionalidade crítica."
+    },
+    {
+      "taskId": 36,
+      "taskTitle": "Lógica para Concessão Automática de Badges",
+      "complexityScore": 7,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Divida em: 1. Criar um `BadgeService` para encapsular a lógica de verificação. 2. Definir os gatilhos para chamar o serviço (ex: após uma partida, ao entrar em um evento). 3. Implementar a lógica de verificação para múltiplas condições de badges.",
+      "reasoning": "A complexidade é alta devido à natureza da lógica de negócio. Requer um sistema de regras ou listeners para verificar várias condições, o que pode se tornar complexo e difícil de testar."
+    },
+    {
+      "taskId": 37,
+      "taskTitle": "UI para Exibição de Badges e Conquistas do Usuário",
+      "complexityScore": 3,
+      "recommendedSubtasks": 2,
+      "expansionPrompt": "Divida em: 1. Criar um componente de grade para exibir as badges. 2. Usar um `Tooltip` para mostrar os detalhes da badge ao passar o mouse.",
+      "reasoning": "Tarefa de UI de baixa complexidade, focada em exibir uma coleção de imagens e informações associadas."
+    },
+    {
+      "taskId": 38,
+      "taskTitle": "API e Schema para Campanhas Temáticas",
+      "complexityScore": 5,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Divida em: 1. Estender o schema do Prisma com o modelo `Campaign`. 2. Criar endpoints CRUD para gerenciar campanhas. 3. Integrar a lógica da campanha (ex: multiplicador de pontos) no `PointsService`.",
+      "reasoning": "Complexidade moderada. Envolve modelagem de dados, CRUD e, mais importante, a integração da lógica da campanha em outros serviços existentes, como o de cálculo de pontos."
+    },
+    {
+      "taskId": 39,
+      "taskTitle": "Desenvolvimento da Página Pública de Resultados",
+      "complexityScore": 6,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Divida em: 1. Criar a nova rota e página pública `/[tenantSlug]/events/[eventId]`. 2. Implementar a busca de dados no servidor (SSR/SSG). 3. Desenvolver um layout público separado que não requer autenticação.",
+      "reasoning": "A complexidade vem da necessidade de renderização no servidor para SEO e performance, além de criar uma visualização de dados que seja pública e segura (não expondo informações sensíveis)."
+    },
+    {
+      "taskId": 40,
+      "taskTitle": "Implementação de Meta Tags para SEO e OpenGraph",
+      "complexityScore": 4,
+      "recommendedSubtasks": 2,
+      "expansionPrompt": "Divida em: 1. Usar a função `generateMetadata` do Next.js na página pública do evento. 2. Popular dinamicamente as tags com os dados do evento.",
+      "reasoning": "Tarefa de complexidade moderada. A mecânica é fornecida pelo Next.js, mas requer o carregamento de dados e a formatação correta das strings para as meta tags."
+    },
+    {
+      "taskId": 41,
+      "taskTitle": "API e Schema para o Feed Interno Multimídia",
+      "complexityScore": 6,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Divida em: 1. Definir os modelos `Post` e `Comment` no Prisma. 2. Criar API para criar posts (considerando a mídia). 3. Criar API para listar posts com paginação. 4. Criar API para adicionar comentários.",
+      "reasoning": "Desenvolvimento de uma feature completa com modelagem de dados e múltiplos endpoints. A paginação e o tratamento de uploads de mídia adicionam complexidade."
+    },
+    {
+      "taskId": 42,
+      "taskTitle": "Integração com Cloudflare R2/AWS S3 para Upload de Imagens",
+      "complexityScore": 7,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Divida em: 1. Configurar o bucket e as políticas de CORS. 2. Criar um endpoint `POST /api/upload-url` para gerar URLs pré-assinadas. 3. Configurar o SDK da AWS com as credenciais.",
+      "reasoning": "Tarefa de infraestrutura e segurança complexa. A geração de URLs pré-assinadas e a configuração correta de CORS são cruciais para a segurança e podem ser difíceis de depurar."
+    },
+    {
+      "taskId": 45,
+      "taskTitle": "UI do Feed Interno com Upload e Exibição de Mídia",
+      "complexityScore": 7,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Divida em: 1. Desenvolver o formulário de criação de post. 2. Implementar o fluxo de upload em duas etapas (obter URL, fazer upload). 3. Criar a lista de posts com rolagem infinita usando `useInfiniteQuery`. 4. Renderizar os diferentes tipos de mídia.",
+      "reasoning": "UI altamente complexa que coordena um fluxo de upload assíncrono, gerenciamento de estado otimista e rolagem infinita, representando um desafio significativo de frontend."
+    },
+    {
+      "taskId": 46,
+      "taskTitle": "Configuração do OneSignal para Notificações Push",
+      "complexityScore": 5,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Divida em: 1. Configurar o SDK Web do OneSignal no cliente e o fluxo de permissão. 2. Criar um serviço de backend para enviar notificações via API REST. 3. Implementar a associação entre o ID do usuário da app e o ID do OneSignal.",
+      "reasoning": "A tarefa envolve integração no frontend e backend. A complexidade é moderada devido à necessidade de coordenar o fluxo de permissão do usuário com a lógica de envio do servidor."
+    },
+    {
+      "taskId": 47,
+      "taskTitle": "Lógica para Disparo de Notificações (Push e Email)",
+      "complexityScore": 7,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Divida em: 1. Criar um `NotificationService` central que abstrai os canais (email, push). 2. Identificar os pontos de gatilho na aplicação (ex: partida agendada) e integrar o serviço. 3. Utilizar BullMQ para enfileirar o envio de notificações de forma assíncrona.",
+      "reasoning": "Ponto de integração complexo que orquestra múltiplos serviços (email, push, jobs). A complexidade está em criar um sistema confiável e desacoplado para o envio de notificações."
+    },
+    {
+      "taskId": 48,
+      "taskTitle": "Integração com Stripe para Gestão de Planos e Assinaturas",
+      "complexityScore": 5,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Divida em: 1. Configurar os produtos e preços no dashboard do Stripe. 2. Instalar o SDK do Stripe e configurar as chaves de API. 3. Criar um script para sincronizar/verificar os produtos via API.",
+      "reasoning": "A configuração do Stripe é multifacetada, envolvendo tanto o dashboard quanto o código. A complexidade é moderada, pois exige um entendimento do modelo de dados do Stripe (Produtos, Preços, Clientes)."
+    },
+    {
+      "taskId": 49,
+      "taskTitle": "API para Criação de Sessão de Checkout do Stripe",
+      "complexityScore": 6,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Divida em: 1. Criar endpoint para `create-checkout-session`. 2. Implementar a lógica para criar ou reutilizar um `customerId` do Stripe. 3. Associar o `tenantId` à sessão usando `client_reference_id`.",
+      "reasoning": "Interação crítica com a API do Stripe. A complexidade está em passar os dados corretos para o Stripe, especialmente o `client_reference_id`, que é essencial para o webhook funcionar."
+    },
+    {
+      "taskId": 50,
+      "taskTitle": "Webhook para Eventos do Stripe",
+      "complexityScore": 8,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Divida em: 1. Criar o endpoint do webhook. 2. Implementar a verificação de assinatura do Stripe para segurança. 3. Implementar a lógica para o evento `checkout.session.completed` para provisionar o acesso. 4. Implementar a lógica para outros eventos (ex: `customer.subscription.deleted`).",
+      "reasoning": "Uma das tarefas mais complexas e críticas. O webhook deve ser extremamente confiável e seguro. Erros aqui podem levar a problemas de faturamento. A depuração também é desafiadora."
+    },
+    {
+      "taskId": 51,
+      "taskTitle": "UI do Painel de Billing e Planos",
+      "complexityScore": 5,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Divida em: 1. Desenvolver a UI para exibir os planos disponíveis. 2. Implementar a chamada à API para criar a sessão de checkout e redirecionar o usuário. 3. Adicionar um botão para o portal do cliente do Stripe.",
+      "reasoning": "UI de complexidade moderada que serve como a porta de entrada para o fluxo de pagamento. Requer uma boa apresentação dos planos e uma integração suave com a API de checkout."
+    },
+    {
+      "taskId": 52,
+      "taskTitle": "Integração com Sentry para Monitoramento de Erros",
+      "complexityScore": 3,
+      "recommendedSubtasks": 2,
+      "expansionPrompt": "Divida em: 1. Executar o wizard do Sentry para configuração automática. 2. Verificar a configuração de envio de source maps e testar o envio de um erro.",
+      "reasoning": "Tarefa de baixa complexidade, pois o processo é amplamente automatizado pelas ferramentas do Sentry. O principal esforço é a verificação."
+    },
+    {
+      "taskId": 53,
+      "taskTitle": "Configuração de Logs com Loki e Visualização no Grafana",
+      "complexityScore": 6,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Divida em: 1. Configurar um transportador no Pino para enviar logs para o Loki. 2. Configurar o agente de coleta de logs (ex: Promtail). 3. Adicionar o Loki como fonte de dados no Grafana. 4. Criar um dashboard inicial no Grafana.",
+      "reasoning": "Tarefa de infraestrutura que vai além do código da aplicação. A complexidade está em configurar corretamente toda a cadeia de observabilidade, do log gerado à visualização."
+    },
+    {
+      "taskId": 54,
+      "taskTitle": "Criação do Painel Multi-Tenant para Agências",
+      "complexityScore": 8,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Divida em: 1. Estender o modelo de dados para suportar a relação Agência-Tenant. 2. Criar o painel de visualização para o admin da agência. 3. Implementar a lógica de 'personificação' ou troca de tenant. 4. Refatorar o middleware de autorização para suportar este novo papel.",
+      "reasoning": "Funcionalidade arquiteturalmente complexa. Introduz um novo modelo de acesso que impacta a lógica de autorização em toda a aplicação. A 'personificação' é um recurso complexo e sensível em termos de segurança."
+    },
+    {
+      "taskId": 55,
+      "taskTitle": "Configuração dos Testes E2E com Playwright",
+      "complexityScore": 5,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Divida em: 1. Executar `npm init playwright` e configurar o `playwright.config.ts`. 2. Criar um fluxo reutilizável para autenticar um usuário de teste. 3. Escrever o primeiro teste E2E para o fluxo de autenticação. 4. Integrar a execução dos testes no pipeline de CI/CD.",
+      "reasoning": "A configuração inicial é simples, mas a complexidade real está em escrever testes E2E robustos, especialmente o fluxo de autenticação, e integrá-los ao pipeline de CI/CD."
+    },
+    {
+      "taskId": 6,
+      "taskTitle": "",
+      "complexityScore": 5,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Break down this task with a focus on .",
+      "reasoning": "Automatically added due to missing analysis in AI response."
+    },
+    {
+      "taskId": 43,
+      "taskTitle": "",
+      "complexityScore": 5,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Break down this task with a focus on .",
+      "reasoning": "Automatically added due to missing analysis in AI response."
+    },
+    {
+      "taskId": 44,
+      "taskTitle": "",
+      "complexityScore": 5,
+      "recommendedSubtasks": 3,
+      "expansionPrompt": "Break down this task with a focus on .",
+      "reasoning": "Automatically added due to missing analysis in AI response."
+    }
+  ]
 }
