@@ -266,26 +266,104 @@ npx tsx scripts/stripe-test.ts
 
 #### 4. Webhooks (Desenvolvimento)
 
-Para testar webhooks localmente:
+O webhook do Stripe está implementado em `/api/webhooks/stripe` e processa automaticamente os seguintes eventos:
+
+- `checkout.session.completed` - Nova assinatura criada via Checkout
+- `customer.subscription.updated` - Assinatura atualizada (mudança de plano, renovação)
+- `customer.subscription.deleted` - Assinatura cancelada
+
+**Configuração Local:**
+
+1. Instale o Stripe CLI:
 
 ```bash
-# Instalar Stripe CLI
+# macOS
 brew install stripe/stripe-cli/stripe
 
-# Login
-stripe login
+# Linux/Windows
+# Veja: https://stripe.com/docs/stripe-cli
+```
 
-# Encaminhar webhooks para localhost
+2. Faça login no Stripe CLI:
+
+```bash
+stripe login
+```
+
+3. Inicie o servidor de desenvolvimento:
+
+```bash
+npm run dev
+```
+
+4. Em outro terminal, encaminhe webhooks para localhost:
+
+```bash
 stripe listen --forward-to localhost:3000/api/webhooks/stripe
 ```
 
-O Stripe CLI fornecerá um `STRIPE_WEBHOOK_SECRET` que você deve adicionar ao `.env`.
+O Stripe CLI fornecerá um `STRIPE_WEBHOOK_SECRET` (começa com `whsec_`) que você deve adicionar ao `.env`:
+
+```env
+STRIPE_WEBHOOK_SECRET="whsec_..."
+```
+
+**Testando Eventos:**
+
+Você pode testar eventos específicos usando o Stripe CLI:
+
+```bash
+# Testar checkout.session.completed
+stripe trigger checkout.session.completed
+
+# Testar customer.subscription.updated
+stripe trigger customer.subscription.updated
+
+# Testar customer.subscription.deleted
+stripe trigger customer.subscription.deleted
+```
+
+**Verificando se o Webhook Funciona:**
+
+1. Verifique os logs do servidor Next.js - você deve ver mensagens como:
+
+   ```
+   [Webhook Stripe] Evento recebido: checkout.session.completed (ID: evt_...)
+   [Webhook Stripe] Assinatura criada para tenant ...
+   ```
+
+2. Verifique os logs do Stripe CLI - você deve ver:
+
+   ```
+   --> checkout.session.completed [200] POST http://localhost:3000/api/webhooks/stripe
+   ```
+
+3. Verifique o banco de dados - o Tenant deve ter sido atualizado com:
+   - `stripeSubscriptionId`
+   - `plan` (FREE, PRO ou ENTERPRISE)
+   - `currentPeriodEnd`
+   - `trialEndsAt` (se aplicável)
+
+**Testando com Eventos Reais:**
+
+Para testar com eventos reais do Stripe (sem usar triggers):
+
+1. Crie um checkout session no Stripe Dashboard ou via API
+2. Complete o checkout
+3. O webhook será chamado automaticamente e o Tenant será atualizado
+
+**Troubleshooting:**
+
+- **Erro 400 "Assinatura do webhook inválida"**: Verifique se `STRIPE_WEBHOOK_SECRET` está correto no `.env`
+- **Erro 503 "Stripe não configurado"**: Verifique se `STRIPE_SECRET_KEY` está definido
+- **Evento não processado**: Verifique os logs do servidor para ver qual evento foi recebido
+- **Tenant não encontrado**: Certifique-se de que o `stripeCustomerId` no Tenant corresponde ao `customer` do evento
 
 #### Boas Práticas
 
 - **Segurança**: Nunca exponha `STRIPE_SECRET_KEY` no cliente. Use rotas `/api/billing/...` seguras
 - **Ambientes**: Use chaves diferentes para test (`sk_test_`) e produção (`sk_live_`)
-- **Webhooks**: Configure `/api/webhooks/stripe` para sincronizar eventos automaticamente (Task futura)
+- **Webhooks**: O webhook `/api/webhooks/stripe` está implementado e sincroniza eventos automaticamente
 - **Singleton**: O cliente Stripe é um singleton em `src/lib/stripe.ts` - não inicialize dentro de handlers
 
 <!-- USAGE -->
@@ -472,7 +550,7 @@ Veja os [issues abertos](https://github.com/your-username/pegasus-platform/issue
 - [ ] Sistema de Rankings
 - [ ] Badges e Conquistas
 - [ ] Dashboard de Analytics
-- [ ] Webhook do Stripe para sincronização automática
+- [x] Webhook do Stripe para sincronização automática
 - [ ] Observability (Sentry, Loki, Grafana)
 - [ ] Docker Compose
 - [ ] CI/CD
