@@ -406,6 +406,178 @@ npm run quality:check
 npm run quality:fix
 ```
 
+<!-- API ENDPOINTS -->
+
+## API Endpoints
+
+A aplicação expõe uma API RESTful para gerenciamento de recursos. Todos os endpoints requerem autenticação e isolamento de tenant.
+
+### Eventos (Torneios)
+
+Endpoints para gerenciamento de eventos/torneios:
+
+#### `POST /api/events`
+
+Cria um novo evento (torneio).
+
+**Autenticação:** Requerida  
+**Autorização:** ORGANIZER, ADMIN ou OWNER  
+**Body:**
+
+```json
+{
+  "name": "Copa de Futebol 2024",
+  "description": "Torneio de futebol amador",
+  "startDate": "2024-12-01T00:00:00Z",
+  "endDate": "2024-12-31T23:59:59Z",
+  "location": "Arena Central",
+  "isPublic": true,
+  "status": "DRAFT",
+  "bannerUrl": "https://example.com/banner.jpg"
+}
+```
+
+**Resposta (201):**
+
+```json
+{
+  "message": "Evento criado com sucesso",
+  "event": {
+    "id": "clx...",
+    "tenantId": "clx...",
+    "name": "Copa de Futebol 2024",
+    "status": "DRAFT",
+    ...
+  }
+}
+```
+
+#### `GET /api/events`
+
+Lista todos os eventos do tenant do usuário autenticado.
+
+**Autenticação:** Requerida  
+**Query Params (opcionais):**
+
+- `status` - Filtrar por status: `DRAFT`, `ACTIVE`, `FINISHED`, `CANCELED`
+- `isPublic` - Filtrar por visibilidade: `true` ou `false`
+
+**Exemplo:**
+
+```bash
+GET /api/events?status=ACTIVE&isPublic=true
+```
+
+**Resposta (200):**
+
+```json
+{
+  "message": "Eventos listados com sucesso",
+  "events": [...],
+  "count": 5
+}
+```
+
+#### `GET /api/events/[id]`
+
+Obtém um evento específico por ID.
+
+**Autenticação:** Requerida  
+**Resposta (200):**
+
+```json
+{
+  "message": "Evento encontrado",
+  "event": {
+    "id": "clx...",
+    "name": "Copa de Futebol 2024",
+    "modalities": [...],
+    "_count": {
+      "matches": 12
+    },
+    ...
+  }
+}
+```
+
+#### `PUT /api/events/[id]`
+
+Atualiza um evento existente.
+
+**Autenticação:** Requerida  
+**Autorização:** ORGANIZER, ADMIN ou OWNER  
+**Body (todos os campos opcionais):**
+
+```json
+{
+  "name": "Copa de Futebol 2024 - Atualizado",
+  "status": "ACTIVE",
+  "isPublic": true
+}
+```
+
+**Resposta (200):**
+
+```json
+{
+  "message": "Evento atualizado com sucesso",
+  "event": {...}
+}
+```
+
+#### `DELETE /api/events/[id]`
+
+Deleta um evento e todos os recursos relacionados (cascade).
+
+**Autenticação:** Requerida  
+**Autorização:** ORGANIZER, ADMIN ou OWNER  
+**Resposta (200):**
+
+```json
+{
+  "message": "Evento deletado com sucesso"
+}
+```
+
+**Notas:**
+
+- Todos os endpoints aplicam isolamento de tenant automaticamente
+- Operações de escrita (POST, PUT, DELETE) requerem role ORGANIZER, ADMIN ou OWNER
+- A exclusão de um evento remove automaticamente modalidades, times e partidas associadas
+
+### Partidas
+
+#### `PUT /api/matches/[id]`
+
+Atualiza uma partida (agendamento e/ou resultado).
+
+**Autenticação:** Requerida  
+**Autorização:** ORGANIZER, ADMIN ou OWNER  
+**Body:**
+
+```json
+{
+  "scheduledAt": "2024-12-15T14:00:00Z",
+  "startTime": "2024-12-15T14:05:00Z",
+  "endTime": "2024-12-15T15:50:00Z",
+  "round": 1,
+  "teamAScore": 2,
+  "teamBScore": 1,
+  "extraTime": false,
+  "penalties": false,
+  "notes": "Partida emocionante"
+}
+```
+
+**Resposta (200):**
+
+```json
+{
+  "message": "Partida atualizada com sucesso",
+  "match": {...}
+}
+```
+
 <!-- EXECUTANDO O WORKER -->
 
 ## Executando o Worker
@@ -546,6 +718,7 @@ Veja os [issues abertos](https://github.com/your-username/pegasus-platform/issue
 - [x] Layout Base do Dashboard
 - [x] Integração Resend para Emails
 - [x] Integração com Stripe (SDK, produtos, scripts)
+- [x] API CRUD de Eventos (Torneios)
 - [ ] Geração de Chaves de Torneio
 - [ ] Sistema de Rankings
 - [ ] Badges e Conquistas
