@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const sendMock = vi.fn(async () => ({ id: "email_123" }));
 class ResendMock {
   emails = { send: sendMock } as const;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   constructor(_apiKey?: string) {}
 }
 
@@ -29,7 +30,11 @@ describe("emailService - sendInvitationEmail", () => {
     await sendInvitationEmail({ to: "user@example.com", token: "abc123" });
 
     expect(sendMock).toHaveBeenCalledTimes(1);
-    const args = sendMock.mock.calls[0][0] as Record<string, unknown>;
+    const firstCall = sendMock.mock.calls[0];
+    expect(firstCall).toBeDefined();
+    expect(firstCall).toHaveLength(1);
+    // @ts-expect-error - TypeScript não infere corretamente o tipo do mock do Vitest
+    const args = firstCall[0] as Record<string, unknown>;
     expect(args.from).toBe("no-reply@test.local");
     expect(args.to).toBe("user@example.com");
     expect(String(args.subject)).toContain("Convite");
