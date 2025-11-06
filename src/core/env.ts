@@ -27,6 +27,7 @@ const envSchema = z.object({
 
   // Billing (opcionais, necessários apenas para integração)
   STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_PUBLIC_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   LEMONSQUEEZY_API_KEY: z.string().optional(),
   LEMONSQUEEZY_WEBHOOK_SECRET: z.string().optional(),
