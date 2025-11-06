@@ -5,9 +5,9 @@ export default function MarketingPage() {
         <h1 className="text-4xl font-bold tracking-tight">
           Bem-vindo ao Pegasus
         </h1>
-        <p className="text-muted-foreground text-lg">
+        {/* <p className="text-muted-foreground text-lg">
           Plataforma de torneios corporativos
-        </p>
+        </p> */}
         <p className="text-muted-foreground">
           Esta é a landing page. O layout da aplicação está em /(app)
         </p>
