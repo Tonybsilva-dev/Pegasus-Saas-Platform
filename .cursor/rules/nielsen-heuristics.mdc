@@ -1,0 +1,736 @@
+---
+description: Guidelines for applying Nielsen's Heuristics to improve user experience with loading states, feedback, and error handling
+globs: src/**/*.{ts,tsx}
+alwaysApply: true
+---
+
+# Nielsen's Heuristics - UX Guidelines
+
+## **Visão Geral**
+
+Aplicar as 10 Heurísticas de Nielsen para melhorar a experiência do usuário, com foco especial em feedback visual, estados de carregamento e comunicação de erros.
+
+## **Heurísticas Principais**
+
+### **1. Visibilidade do Status do Sistema** ⚡
+
+O sistema deve sempre informar ao usuário o que está acontecendo através de feedback apropriado e em tempo razoável.
+
+#### **✅ DO: Estados de Carregamento Claros**
+
+```typescript
+// ✅ DO: Skeleton loading para listas
+export function MaterialsList() {
+  const { materials, isLoading } = useMaterialsStore();
+  
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <MaterialCardSkeleton key={i} />
+        ))}
+      </div>
+    );
+  }
+  
+  return (
+    <div className="space-y-4">
+      {materials.map(material => (
+        <MaterialCard key={material.id} material={material} />
+      ))}
+    </div>
+  );
+}
+
+// ✅ DO: Loading states específicos
+export function MaterialCardSkeleton() {
+  return (
+    <div className="animate-pulse rounded-lg border p-4">
+      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+      <div className="h-3 bg-gray-200 rounded w-1/2 mb-4"></div>
+      <div className="h-8 bg-gray-200 rounded"></div>
+    </div>
+  );
+}
+```
+
+#### **❌ DON'T: Carregamento sem Feedback**
+
+```typescript
+// ❌ DON'T: Sem indicação de carregamento
+export function MaterialsList() {
+  const { materials, isLoading } = useMaterialsStore();
+  
+  // Usuário não sabe se está carregando ou se não há dados
+  return (
+    <div>
+      {materials.map(material => (
+        <MaterialCard key={material.id} material={material} />
+      ))}
+    </div>
+  );
+}
+```
+
+### **2. Correspondência entre Sistema e Mundo Real** 🌍
+
+O sistema deve falar a linguagem do usuário, com palavras, frases e conceitos familiares.
+
+#### **✅ DO: Linguagem Natural e Familiar**
+
+```typescript
+// ✅ DO: Mensagens claras e familiares
+export function EmptyMaterialsState() {
+  return (
+    <div className="text-center py-12">
+      <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+        <RecycleIcon className="w-12 h-12 text-gray-400" />
+      </div>
+      <h3 className="text-lg font-medium text-gray-900 mb-2">
+        Nenhum material encontrado
+      </h3>
+      <p className="text-gray-500 mb-4">
+        Que tal começar adicionando seu primeiro material para reciclagem?
+      </p>
+      <Button>Adicionar Material</Button>
+    </div>
+  );
+}
+```
+
+### **3. Controle e Liberdade do Usuário** 🎛️
+
+Usuários frequentemente escolhem funções do sistema por engano e precisam de uma "saída de emergência" claramente marcada.
+
+#### **✅ DO: Ações Reversíveis e Cancelamento**
+
+```typescript
+// ✅ DO: Confirmação para ações destrutivas
+export function DeleteMaterialDialog({ materialId, onClose }: Props) {
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteMaterial(materialId);
+      toast.success("Material removido com sucesso!");
+      onClose();
+    } catch (error) {
+      toast.error("Erro ao remover material");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+  
+  return (
+    <Dialog>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Confirmar Remoção</DialogTitle>
+          <DialogDescription>
+            Tem certeza que deseja remover este material? Esta ação não pode ser desfeita.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button 
+            variant="destructive" 
+            onClick={handleDelete}
+            disabled={isDeleting}
+          >
+            {isDeleting ? "Removendo..." : "Remover"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+```
+
+### **4. Consistência e Padrões** 🔄
+
+Usuários não devem ter que se perguntar se palavras, situações ou ações diferentes significam a mesma coisa.
+
+#### **✅ DO: Padrões Consistentes**
+
+```typescript
+// ✅ DO: Componentes de estado consistentes
+export function LoadingState({ message = "Carregando..." }: { message?: string }) {
+  return (
+    <div className="flex items-center justify-center py-8">
+      <div className="flex items-center space-x-2">
+        <div className="animate-spin rounded-full h-5 w-5 border-2 border-green-500 border-t-transparent"></div>
+        <span className="text-gray-600">{message}</span>
+      </div>
+    </div>
+  );
+}
+
+export function ErrorState({ 
+  message = "Algo deu errado", 
+  onRetry 
+}: { 
+  message?: string; 
+  onRetry?: () => void; 
+}) {
+  return (
+    <div className="text-center py-8">
+      <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+        <AlertCircleIcon className="w-8 h-8 text-red-500" />
+      </div>
+      <h3 className="text-lg font-medium text-gray-900 mb-2">Ops!</h3>
+      <p className="text-gray-500 mb-4">{message}</p>
+      {onRetry && (
+        <Button onClick={onRetry} variant="outline">
+          Tentar Novamente
+        </Button>
+      )}
+    </div>
+  );
+}
+```
+
+### **5. Prevenção de Erros** 🛡️
+
+Melhor que boas mensagens de erro é um design cuidadoso que previne a ocorrência de problemas.
+
+#### **✅ DO: Validação em Tempo Real**
+
+```typescript
+// ✅ DO: Validação com feedback imediato
+export function MaterialForm() {
+  const [formData, setFormData] = useState({ name: "", weight: "" });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  const validateField = (field: string, value: string) => {
+    const newErrors = { ...errors };
+    
+    if (field === "name" && value.length < 2) {
+      newErrors.name = "Nome deve ter pelo menos 2 caracteres";
+    } else if (field === "weight" && isNaN(Number(value))) {
+      newErrors.weight = "Peso deve ser um número válido";
+    } else {
+      delete newErrors[field];
+    }
+    
+    setErrors(newErrors);
+  };
+  
+  return (
+    <form>
+      <div>
+        <Label htmlFor="name">Nome do Material</Label>
+        <Input
+          id="name"
+          value={formData.name}
+          onChange={(e) => {
+            setFormData(prev => ({ ...prev, name: e.target.value }));
+            validateField("name", e.target.value);
+          }}
+          className={errors.name ? "border-red-500" : ""}
+        />
+        {errors.name && (
+          <p className="text-sm text-red-500 mt-1">{errors.name}</p>
+        )}
+      </div>
+    </form>
+  );
+}
+```
+
+### **6. Reconhecimento em vez de Lembrança** 🧠
+
+Minimize a carga de memória do usuário tornando objetos, ações e opções visíveis.
+
+#### **✅ DO: Informações Visuais Claras**
+
+```typescript
+// ✅ DO: Status visual claro
+export function MaterialCard({ material }: { material: Material }) {
+  const getStatusColor = (status: MaterialStatus) => {
+    switch (status) {
+      case "ACTIVE": return "bg-green-100 text-green-800";
+      case "RESERVED": return "bg-yellow-100 text-yellow-800";
+      case "SOLD": return "bg-blue-100 text-blue-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
+  
+  return (
+    <Card className="relative">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle>{material.name}</CardTitle>
+          <Badge className={getStatusColor(material.status)}>
+            {material.status}
+          </Badge>
+        </div>
+        <CardDescription>
+          {material.description}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center space-x-4 text-sm text-gray-600">
+          <span>💰 R$ {material.price}</span>
+          <span>⚖️ {material.weight}kg</span>
+          <span>📍 {material.location}</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+### **7. Flexibilidade e Eficiência de Uso** ⚡
+
+Aceleradores podem acelerar a interação para o usuário experiente, mas o sistema deve ser útil para usuários inexperientes e experientes.
+
+#### **✅ DO: Atalhos e Ações Rápidas**
+
+```typescript
+// ✅ DO: Atalhos de teclado e ações rápidas
+export function MaterialActions({ materialId }: { materialId: string }) {
+  const handleQuickReserve = () => {
+    // Ação rápida sem confirmação para usuários experientes
+    toast.success("Material reservado!");
+  };
+  
+  return (
+    <div className="flex space-x-2">
+      <Button size="sm" onClick={handleQuickReserve}>
+        Reservar
+      </Button>
+      <Button size="sm" variant="outline">
+        Ver Detalhes
+      </Button>
+    </div>
+  );
+}
+```
+
+### **8. Estética e Design Minimalista** 🎨
+
+Diálogos não devem conter informações irrelevantes ou raramente necessárias.
+
+#### **✅ DO: Interface Limpa e Focada**
+
+```typescript
+// ✅ DO: Interface minimalista
+export function MaterialList() {
+  const { materials, filters, setFilters } = useMaterialsStore();
+  
+  return (
+    <div className="space-y-4">
+      {/* Filtros essenciais apenas */}
+      <div className="flex space-x-2">
+        <Select value={filters.type} onValueChange={(value) => setFilters({ type: value })}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Tipo de Material" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="plastic">Plástico</SelectItem>
+            <SelectItem value="paper">Papel</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
+      {/* Lista focada no essencial */}
+      <div className="grid gap-4">
+        {materials.map(material => (
+          <MaterialCard key={material.id} material={material} />
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+### **9. Ajudar Usuários a Reconhecer, Diagnosticar e Recuperar de Erros** 🔧
+
+Mensagens de erro devem ser expressas em linguagem simples, indicar precisamente o problema e sugerir uma solução.
+
+#### **✅ DO: Mensagens de Erro Úteis**
+
+```typescript
+// ✅ DO: Toast com mensagens claras
+export function useErrorHandler() {
+  const showError = (error: Error) => {
+    let message = "Algo deu errado";
+    
+    if (error.message.includes("network")) {
+      message = "Verifique sua conexão com a internet";
+    } else if (error.message.includes("unauthorized")) {
+      message = "Sua sessão expirou. Faça login novamente";
+    } else if (error.message.includes("validation")) {
+      message = "Verifique os dados informados";
+    }
+    
+    toast.error(message, {
+      description: "Tente novamente em alguns instantes",
+      action: {
+        label: "Tentar Novamente",
+        onClick: () => window.location.reload()
+      }
+    });
+  };
+  
+  return { showError };
+}
+```
+
+### **10. Ajuda e Documentação** 📚
+
+Mesmo que seja melhor se o sistema puder ser usado sem documentação, pode ser necessário fornecer ajuda e documentação.
+
+#### **✅ DO: Tooltips e Ajuda Contextual**
+
+```typescript
+// ✅ DO: Ajuda contextual
+export function EcoPointsDisplay({ points }: { points: number }) {
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex items-center space-x-2 cursor-help">
+            <LeafIcon className="w-5 h-5 text-green-500" />
+            <span className="font-semibold">{points} EcoPoints</span>
+            <HelpCircleIcon className="w-4 h-4 text-gray-400" />
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>EcoPoints são pontos que você ganha por ações sustentáveis</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+```
+
+## **Componentes de Estado Padrão**
+
+### **Skeleton Components**
+
+```typescript
+// ✅ DO: Skeletons específicos para cada tipo de conteúdo
+export function MaterialCardSkeleton() {
+  return (
+    <div className="animate-pulse rounded-lg border p-4">
+      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+      <div className="h-3 bg-gray-200 rounded w-1/2 mb-4"></div>
+      <div className="h-8 bg-gray-200 rounded"></div>
+    </div>
+  );
+}
+
+export function MapSkeleton() {
+  return (
+    <div className="animate-pulse bg-gray-200 rounded-lg h-96 flex items-center justify-center">
+      <MapIcon className="w-12 h-12 text-gray-400" />
+    </div>
+  );
+}
+```
+
+### **Empty States**
+
+```typescript
+// ✅ DO: Empty states específicos e acionáveis
+export function EmptyMaterialsState() {
+  return (
+    <div className="text-center py-12">
+      <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+        <RecycleIcon className="w-12 h-12 text-gray-400" />
+      </div>
+      <h3 className="text-lg font-medium text-gray-900 mb-2">
+        Nenhum material encontrado
+      </h3>
+      <p className="text-gray-500 mb-4">
+        Que tal começar adicionando seu primeiro material para reciclagem?
+      </p>
+      <Button>Adicionar Material</Button>
+    </div>
+  );
+}
+```
+
+### **Toast Notifications**
+
+```typescript
+// ✅ DO: Toast com Sonner
+import { toast } from "sonner";
+
+export function useNotifications() {
+  const showSuccess = (message: string) => {
+    toast.success(message);
+  };
+  
+  const showError = (message: string, description?: string) => {
+    toast.error(message, { description });
+  };
+  
+  const showLoading = (message: string) => {
+    return toast.loading(message);
+  };
+  
+  return { showSuccess, showError, showLoading };
+}
+```
+
+## **Padrões de Loading**
+
+### **Estados de Carregamento por Contexto**
+
+```typescript
+// ✅ DO: Loading states contextuais
+export function MaterialList() {
+  const { materials, isLoading, error } = useMaterialsStore();
+  
+  if (isLoading) {
+    return <MaterialListSkeleton />;
+  }
+  
+  if (error) {
+    return <ErrorState message="Erro ao carregar materiais" onRetry={refetch} />;
+  }
+  
+  if (materials.length === 0) {
+    return <EmptyMaterialsState />;
+  }
+  
+  return (
+    <div className="space-y-4">
+      {materials.map(material => (
+        <MaterialCard key={material.id} material={material} />
+      ))}
+    </div>
+  );
+}
+```
+
+## **Landmarks e Acessibilidade** 🏗️
+
+### **Estrutura Semântica Obrigatória**
+
+Aplicar landmarks HTML semânticos para melhorar navegação e acessibilidade, seguindo WCAG 2.1 AA e heurísticas de Nielsen.
+
+#### **✅ DO: Estrutura Semântica Completa**
+
+```typescript
+// ✅ DO: Estrutura de landmarks correta
+export default function HomePage() {
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Skip Link para navegação por teclado */}
+      <a 
+        href="#main-content" 
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-50 bg-green-600 text-white px-4 py-2 rounded-md font-medium transition-all"
+      >
+        Pular para o conteúdo principal
+      </a>
+      
+      {/* Header com navegação */}
+      <header className="sticky top-0 z-[9999] border-b bg-white/95 backdrop-blur-md shadow-sm">
+        <nav className="container mx-auto px-4 py-4" aria-label="Navegação principal">
+          {/* Conteúdo da navegação */}
+        </nav>
+      </header>
+
+      {/* Conteúdo principal */}
+      <main id="main-content" aria-label="Conteúdo principal da página">
+        {/* Seções de conteúdo */}
+        <section aria-label="Apresentação do produto">
+          {/* Hero section */}
+        </section>
+        
+        <section aria-label="Como funciona - Processo de uso">
+          {/* Processo */}
+        </section>
+        
+        <aside aria-label="Mapa interativo sustentável">
+          {/* Conteúdo complementar */}
+        </aside>
+      </main>
+
+      {/* Rodapé */}
+      <footer className="bg-gray-900 py-16 text-white">
+        {/* Links e informações */}
+      </footer>
+    </div>
+  );
+}
+```
+
+#### **❌ DON'T: Estrutura Não Semântica**
+
+```typescript
+// ❌ DON'T: Usar divs genéricas sem landmarks
+export default function HomePage() {
+  return (
+    <div>
+      <div className="header">
+        <div className="nav">
+          {/* Navegação sem semântica */}
+        </div>
+      </div>
+      
+      <div className="content">
+        {/* Conteúdo sem estrutura clara */}
+      </div>
+    </div>
+  );
+}
+```
+
+### **Elementos Semânticos Obrigatórios**
+
+#### **1. Skip Link**
+
+```typescript
+// ✅ DO: Skip link para navegação por teclado
+<a 
+  href="#main-content" 
+  className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-50 bg-green-600 text-white px-4 py-2 rounded-md font-medium transition-all"
+>
+  Pular para o conteúdo principal
+</a>
+```
+
+#### **2. Header e Navegação**
+
+```typescript
+// ✅ DO: Header semântico com navegação
+<header className="sticky top-0 z-[9999] border-b bg-white/95 backdrop-blur-md shadow-sm">
+  <nav aria-label="Navegação principal">
+    {/* Links de navegação */}
+  </nav>
+</header>
+```
+
+#### **3. Main Content**
+
+```typescript
+// ✅ DO: Main com ID para skip link
+<main id="main-content" aria-label="Conteúdo principal da página">
+  {/* Conteúdo principal */}
+</main>
+```
+
+#### **4. Seções e Regiões**
+
+```typescript
+// ✅ DO: Seções com aria-labels descritivos
+<section aria-label="Como funciona - Processo de uso da plataforma">
+  <h2>Como funciona</h2>
+  {/* Conteúdo da seção */}
+</section>
+
+<aside aria-label="Mapa interativo sustentável">
+  {/* Conteúdo complementar */}
+</aside>
+```
+
+#### **5. Footer**
+
+```typescript
+// ✅ DO: Footer semântico
+<footer className="bg-gray-900 py-16 text-white">
+  {/* Links e informações da empresa */}
+</footer>
+```
+
+### **Z-Index e Camadas**
+
+#### **✅ DO: Hierarquia de Z-Index Clara**
+
+```typescript
+// ✅ DO: Z-index organizados por camadas
+const zIndexLayers = {
+  skipLink: 'z-50',           // Skip link sempre visível
+  header: 'z-[9999]',         // Header sempre no topo
+  modal: 'z-[1000]',          // Modais e overlays
+  dropdown: 'z-[100]',        // Dropdowns e tooltips
+  content: 'z-10',            // Conteúdo normal
+  background: 'z-0'           // Elementos de fundo
+};
+
+// Header com z-index alto
+<header className={`sticky top-0 ${zIndexLayers.header} border-b bg-white/95 backdrop-blur-md shadow-sm`}>
+```
+
+#### **❌ DON'T: Z-Index Conflitantes**
+
+```typescript
+// ❌ DON'T: Z-index baixo que pode ser sobreposto
+<header className="sticky top-0 z-10">
+  {/* Pode ser sobreposto por outros elementos */}
+</header>
+```
+
+### **Aria-Labels Descritivos**
+
+#### **✅ DO: Labels Específicos e Úteis**
+
+```typescript
+// ✅ DO: Aria-labels que descrevem o propósito
+<nav aria-label="Navegação principal">
+<main aria-label="Conteúdo principal da página">
+<section aria-label="Como funciona - Processo de uso da plataforma">
+<aside aria-label="Mapa interativo sustentável">
+<footer aria-label="Rodapé - Links e informações da empresa">
+```
+
+#### **❌ DON'T: Labels Genéricos ou Redundantes**
+
+```typescript
+// ❌ DON'T: Labels genéricos
+<nav aria-label="Menu">
+<section aria-label="Seção">
+<aside aria-label="Sidebar">
+```
+
+### **Navegação por Teclado**
+
+#### **✅ DO: Suporte Completo ao Teclado**
+
+```typescript
+// ✅ DO: Skip link funcional
+<a 
+  href="#main-content" 
+  className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-50 bg-green-600 text-white px-4 py-2 rounded-md font-medium transition-all"
+>
+  Pular para o conteúdo principal
+</a>
+
+// ✅ DO: Focus management
+<button 
+  className="focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+  onKeyDown={(e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      handleClick();
+    }
+  }}
+>
+  Ação
+</button>
+```
+
+### **Conformidade WCAG 2.1 AA**
+
+#### **Critérios de Sucesso Implementados:**
+
+- ✅ **1.3.1 Info and Relationships**: Estrutura semântica clara
+- ✅ **2.4.1 Bypass Blocks**: Skip link funcional
+- ✅ **2.4.6 Headings and Labels**: Headings hierárquicos
+- ✅ **4.1.2 Name, Role, Value**: Aria-labels apropriados
+
+## **Referências**
+
+- [Nielsen's 10 Usability Heuristics](https://www.nngroup.com/articles/ten-usability-heuristics/)
+- [WCAG 2.1 AA Guidelines](https://www.w3.org/WAI/WCAG21/quickref/)
+- [HTML Landmarks](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/ARIA_Techniques#landmark_roles)
+- [Sonner Documentation](https://sonner.emilkowal.ski/)
+- [Shadcn UI Components](https://ui.shadcn.com/)
+- [Loading States Best Practices](https://uxdesign.cc/loading-states-in-ux-design-5c8b0b4a8b8a)

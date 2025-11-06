@@ -1,0 +1,218 @@
+---
+description: Guidelines for using Zustand for global state management in the Ecoleta project
+globs: src/**/*.{ts,tsx}
+alwaysApply: true
+---
+
+# Zustand State Management
+
+## **Visão Geral**
+
+Zustand é o padrão obrigatório para gerenciamento de estado global no Ecoleta. Use Zustand para qualquer estado que precise ser compartilhado entre componentes ou persistido.
+
+## **Padrões Obrigatórios**
+
+### **✅ DO: Usar Zustand para Estado Global**
+
+```typescript
+// ✅ DO: Store Zustand para estado global
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+
+interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+  setUser: (user: User | null) => void;
+}
+
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      user: null,
+      isAuthenticated: false,
+      setUser: (user) => set({ user, isAuthenticated: !!user }),
+    }),
+    { name: 'auth-storage' }
+  )
+);
+```
+
+### **❌ DON'T: useState para Estado Global**
+
+```typescript
+// ❌ DON'T: useState para estado compartilhado
+const [user, setUser] = useState(null); // Não use para estado global
+```
+
+## **Estrutura de Stores**
+
+### **Organização por Domínio**
+
+```typescript
+// ✅ DO: Um store por domínio
+src/lib/stores/
+├── auth.store.ts      // Autenticação e usuário
+├── onboarding.store.ts // Fluxo de onboarding
+├── materials.store.ts  // Materiais e itens
+├── map.store.ts       // Mapa e geolocalização
+└── index.ts          // Barrel exports
+```
+
+### **Interface e Tipos**
+
+```typescript
+// ✅ DO: Interfaces bem definidas
+interface User {
+  id: string;
+  email: string;
+  name?: string | null;
+  image?: string | null;
+  hasSelectedRole: boolean;
+  userType?: UserType;
+}
+
+interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  // Actions
+  setUser: (user: User | null) => void;
+  setLoading: (loading: boolean) => void;
+  updateUserRole: (userType: UserType) => void;
+  reset: () => void;
+}
+```
+
+## **Sincronização com NextAuth**
+
+### **Hook de Sincronização**
+
+```typescript
+// ✅ DO: Hook para sincronizar NextAuth com Zustand
+export function useAuthSync() {
+  const { data: session, status } = useSession();
+  const { setUser, setStatus, reset } = useAuthStore();
+
+  useEffect(() => {
+    setStatus(status);
+    
+    if (status === "authenticated" && session?.user) {
+      setUser({
+        id: session.user.id,
+        email: session.user.email || "",
+        name: session.user.name || null,
+        image: session.user.image || null,
+        hasSelectedRole: session.user.hasSelectedRole ?? false,
+        userType: session.user.userType as UserType,
+      });
+    } else if (status === "unauthenticated") {
+      reset();
+    }
+  }, [session, status, setUser, setStatus, reset]);
+}
+```
+
+### **Provider Integration**
+
+```typescript
+// ✅ DO: Integrar no AuthProvider
+function AuthSync({ children }: { children: ReactNode }) {
+  useAuthSync();
+  return <>{children}</>;
+}
+
+export function AuthProvider({ children }: AuthProviderProps) {
+  return (
+    <SessionProvider>
+      <AuthSync>{children}</AuthSync>
+    </SessionProvider>
+  );
+}
+```
+
+## **Uso em Componentes**
+
+### **✅ DO: Usar Store Hooks**
+
+```typescript
+// ✅ DO: Usar hooks do store
+import { useAuthStore } from '@/lib/stores/auth.store';
+
+export function UserProfile() {
+  const { user, isAuthenticated, setUser } = useAuthStore();
+  
+  if (!isAuthenticated) return <LoginButton />;
+  
+  return <div>Welcome, {user?.name}!</div>;
+}
+```
+
+### **❌ DON'T: Acessar Store Diretamente**
+
+```typescript
+// ❌ DON'T: Acessar store diretamente
+import { useAuthStore } from '@/lib/stores/auth.store';
+
+export function UserProfile() {
+  const store = useAuthStore.getState(); // Não faça isso
+  return <div>{store.user?.name}</div>;
+}
+```
+
+## **Persistência e Middleware**
+
+### **Persistência com localStorage**
+
+```typescript
+// ✅ DO: Usar persist middleware para dados importantes
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      // state and actions
+    }),
+    {
+      name: 'auth-storage',
+      getStorage: () => localStorage,
+    }
+  )
+);
+```
+
+### **Selectors para Performance**
+
+```typescript
+// ✅ DO: Usar selectors para evitar re-renders
+const user = useAuthStore((state) => state.user);
+const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+// ❌ DON'T: Usar todo o store
+const { user, isAuthenticated } = useAuthStore(); // Pode causar re-renders desnecessários
+```
+
+## **Testes e Debugging**
+
+### **DevTools Integration**
+
+```typescript
+// ✅ DO: Adicionar DevTools em desenvolvimento
+import { devtools } from 'zustand/middleware';
+
+export const useAuthStore = create<AuthState>()(
+  devtools(
+    persist(
+      (set) => ({
+        // state and actions
+      }),
+      { name: 'auth-storage' }
+    ),
+    { name: 'auth-store' }
+  )
+);
+```
+
+## **Referências**
+
+- [Zustand Documentation](https://zustand-demo.pmnd.rs/)
+- [NextAuth Integration](mdc:src/hooks/useAuthSync.ts)
+- [Auth Store Example](mdc:src/lib/stores/auth.store.ts)
+- [Onboarding Store Example](mdc:src/lib/stores/onboarding.store.ts)

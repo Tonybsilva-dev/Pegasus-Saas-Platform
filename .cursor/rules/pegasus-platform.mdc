@@ -1,0 +1,343 @@
+---
+description: Diretrizes unificadas de desenvolvimento para a Plataforma Pegasus - SaaS multi-tenant de torneios corporativos
+globs: **/*
+alwaysApply: true
+---
+
+- **Estrutura do Projeto e Organização**
+  - Cada **Capability** do PRD corresponde a uma pasta dentro de `src/`
+  - Cada **Feature** é implementada como arquivo isolado (`feature.tsx` ou `feature.ts`)
+  - Cada módulo deve conter um `index.ts` que exporta apenas a interface pública
+  - **Estrutura de exemplo:**
+
+  ```typescript
+  src/events/
+  ├── createEvent.ts
+  ├── getEvents.ts
+  ├── updateEvent.ts
+  └── index.ts
+  ```
+
+  - **Convenções de nomenclatura:**
+    - camelCase para funções
+    - PascalCase para componentes React
+    - kebab-case para arquivos
+  - **Imports:** sempre usar imports absolutos com `@/` apontando para `/src/`
+  - **Commits:** usar convenção semântica (`feat:`, `fix:`, `chore:`, `test:`)
+
+- **Next.js 15 + React 19**
+  - Utilizar **App Router** (`app/`), **Server Actions** e **React Suspense** para otimizar SSR e streaming
+  - Usar **async components** apenas quando necessário (para dados dinâmicos)
+  - Priorizar **componentes server-side** para performance
+  - **Layouts:** definidos por tenant (tema, logo, cor primária)
+  - **SEO:** cada rota deve ter `generateMetadata()` com título, descrição e OpenGraph
+  - Referência: [seo.mdc](mdc:.cursor/rules/seo.mdc) para diretrizes completas de SEO
+
+- **Tailwind v4 + Shadcn UI**
+  - **Tokens centralizados** em `src/ui/theme.ts` (cores, tipografia, espaçamento)
+  - Não sobrescrever componentes Shadcn diretamente — criar variantes via `class-variance-authority`
+  - Seguir heurísticas de Nielsen para UX (consistência, feedback, prevenção de erros)
+  - Layouts responsivos devem usar grid e flex combinados, evitando media queries manuais
+  - Garantir contraste AA mínimo em todos os componentes
+  - **Exemplo de variante:**
+
+  ```typescript
+  // ✅ DO: Criar variante via CVA
+  const buttonVariants = cva("base-classes", {
+    variants: {
+      variant: {
+        primary: "bg-primary text-white",
+        secondary: "bg-secondary text-foreground"
+      }
+    }
+  });
+
+  // ❌ DON'T: Sobrescrever componente Shadcn diretamente
+  // Não editar diretamente node_modules/@/components/ui/button.tsx
+  ```
+
+- **Zustand + TanStack Query**
+  - **Zustand:**
+    - Criar um store por domínio (`useAuthStore`, `useEventStore`, `useRankingStore`)
+    - **Persistência:**
+      - `sessionStorage` → Sessões e tokens (ex: Auth)
+      - `localStorage` → Preferências (tema, idioma)
+    - Utilizar `devtools()` apenas em modo dev
+    - Evitar dependências cíclicas entre stores
+    - **Exemplo:**
+
+    ```typescript
+    // ✅ DO: Store isolado por domínio
+    export const useAuthStore = create<AuthState>()(
+      persist(
+        (set) => ({
+          user: null,
+          setUser: (user) => set({ user }),
+        }),
+        {
+          name: 'auth-storage',
+          storage: createJSONStorage(() => sessionStorage),
+        }
+      )
+    );
+    ```
+
+  - **TanStack Query:**
+    - Query keys devem sempre incluir `tenantId` para isolamento multi-tenant
+    - Configurar `staleTime` ≥ 1 minuto e `refetchOnWindowFocus: false`
+    - Usar **optimistic updates** para UX fluida
+    - Queries globais (auth, user) devem ser cacheadas via `useQueryClient().setQueryData()`
+    - **Exemplo:**
+
+    ```typescript
+    // ✅ DO: Query key com tenantId
+    const { data } = useQuery({
+      queryKey: ['events', tenantId, eventId],
+      queryFn: () => fetchEvent(tenantId, eventId),
+      staleTime: 60000,
+      refetchOnWindowFocus: false,
+    });
+    ```
+
+- **Prisma + PostgreSQL (Multi-tenant)**
+  - Multi-tenant via coluna `tenantId` em todas as tabelas principais
+  - `schema.prisma` deve conter `@@index([tenantId])` para todas as entidades
+  - Migrations geradas com `npx prisma migrate dev` (sem alterações diretas no schema)
+  - Seed inicial (`prisma/seed.ts`) deve criar tenant demo + usuários de teste
+  - Evitar `include` aninhado; usar `select` para controle de performance
+  - **Exemplo:**
+
+  ```prisma
+  // ✅ DO: Index e tenantId obrigatório
+  model Event {
+    id        String   @id @default(cuid())
+    tenantId  String
+    name      String
+    // ...
+    
+    @@index([tenantId])
+  }
+  ```
+
+  ```typescript
+  // ✅ DO: Usar select para performance
+  const events = await prisma.event.findMany({
+    where: { tenantId },
+    select: {
+      id: true,
+      name: true,
+      createdAt: true,
+      // Não incluir relações desnecessárias
+    },
+  });
+
+  // ❌ DON'T: Include aninhado sem necessidade
+  const events = await prisma.event.findMany({
+    where: { tenantId },
+    include: {
+      matches: {
+        include: {
+          teams: {
+            include: {
+              players: true
+            }
+          }
+        }
+      }
+    },
+  });
+  ```
+
+- **Auth.js (NextAuth)**
+  - Provedores: Google, Microsoft (OAuth 2.0)
+  - Persistência via Prisma Adapter
+  - JWT assinado com `HS256` e rotacionado automaticamente
+  - Sessões com expiração de 12h e refresh a cada 1h
+  - Expor hook `useAuth()` que integra Zustand + NextAuth session
+  - **Exemplo:**
+
+  ```typescript
+  // ✅ DO: Hook unificado
+  export function useAuth() {
+    const { data: session } = useSession();
+    const { user, setUser } = useAuthStore();
+    
+    useEffect(() => {
+      if (session?.user) {
+        setUser(session.user);
+      }
+    }, [session, setUser]);
+    
+    return { user, isAuthenticated: !!session };
+  }
+  ```
+
+- **Stripe / LemonSqueezy Billing**
+  - Cada tenant possui subscription independente
+  - Webhooks tratados em `/api/billing/webhook` (resiliência via retry 3x)
+  - Guardar status em `billing_subscriptions` (active, canceled, trialing)
+  - Trial de 7 dias → auto downgrade para plano Free
+  - Fallback manual em caso de falha API (flag `manual_payment`)
+  - **Exemplo:**
+
+  ```typescript
+  // ✅ DO: Webhook com retry
+  export async function POST(req: Request) {
+    try {
+      const event = await stripe.webhooks.constructEvent(...);
+      // Processar evento
+    } catch (error) {
+      // Retry logic (3x)
+      if (retryCount < 3) {
+        await retryWebhook(event);
+      } else {
+        // Fallback manual
+        await markAsManualPayment(tenantId);
+      }
+    }
+  }
+  ```
+
+- **Observabilidade (Sentry + Loki + Grafana)**
+  - **Sentry:**
+    - Capturar erros com escopo de tenant (`Sentry.setTag('tenantId', tenantId)`)
+    - Usar `beforeSend` para mascarar dados sensíveis
+    - **Exemplo:**
+
+    ```typescript
+    // ✅ DO: Tag tenantId em erros
+    try {
+      // código
+    } catch (error) {
+      Sentry.setTag('tenantId', tenantId);
+      Sentry.captureException(error);
+    }
+    ```
+
+  - **Loki + Grafana:**
+    - Logs estruturados (JSON) com `level`, `tenantId`, `context`, `message`
+    - Dashboards por tenant configurados via tags
+    - **Exemplo:**
+
+    ```typescript
+    // ✅ DO: Log estruturado
+    logger.info({
+      level: 'info',
+      tenantId,
+      context: 'event-creation',
+      message: 'Event created successfully',
+      eventId: event.id,
+    });
+    ```
+
+- **Performance Guidelines**
+  - Ativar `React.useMemo` e `React.useCallback` em listas e handlers
+  - Lazy-load em módulos não críticos (ex: gráficos, uploads)
+  - Cache estático em páginas públicas (`revalidate: 60`)
+  - Evitar `any` → preferir tipagem estática via TypeScript 5.x
+  - Otimizar imagens com `<Image />` (Next.js) e compressão WebP/AVIF
+  - Referência: [performance.mdc](mdc:.cursor/rules/performance.mdc) para diretrizes completas
+
+- **Testes**
+  - Frameworks: **Vitest** (unit), **Testing Library** (integration), **Playwright** (E2E)
+  - **Cobertura mínima:** 80% linhas, 70% branches
+  - **Estrutura:**
+
+  ```
+  tests/
+  ├── unit/
+  ├── integration/
+  └── e2e/
+  ```
+
+  - **Casos críticos:**
+    - Login SSO multi-tenant
+    - Geração de chave de torneio
+    - Ranking e badges
+    - Fluxo de pagamento
+  - **Exemplo:**
+
+  ```typescript
+  // ✅ DO: Teste com isolamento de tenant
+  describe('Event Creation', () => {
+    it('should create event for specific tenant', async () => {
+      const tenantId = 'test-tenant';
+      const event = await createEvent(tenantId, { name: 'Test Event' });
+      expect(event.tenantId).toBe(tenantId);
+    });
+  });
+  ```
+
+- **Segurança**
+  - Sanitizar inputs (Zod + escape-html)
+  - Variáveis de ambiente segregadas (.env.local, .env.prod)
+  - Tokens sempre armazenados em memória ou sessionStorage
+  - Política de CORS restritiva (`allowedOrigins` por tenant)
+  - Headers de segurança via Next Middleware (CSP, X-Frame-Options)
+  - Referência: [security.mdc](mdc:.cursor/rules/security.mdc) para diretrizes completas
+  - **Exemplo:**
+
+  ```typescript
+  // ✅ DO: Validação Zod
+  const eventSchema = z.object({
+    name: z.string().min(3).max(100),
+    tenantId: z.string().cuid(),
+  });
+
+  export async function POST(req: Request) {
+    const body = await req.json();
+    const validated = eventSchema.parse(body);
+    // Processar dados validados
+  }
+  ```
+
+- **Integração Cursor + Task-Master**
+  - Cada fase do PRD (0–4) corresponde a um **branch temático** (`phase-0-foundation`, `phase-1-auth`, etc.)
+  - O Cursor deve abrir o PRD em paralelo para seguir o **dependency graph** topológico
+  - A cada conclusão de módulo:
+    1. Rodar validação de fase
+    2. Executar testes automáticos
+    3. Comentar no PR o hash do commit finalizado
+  - Referência: [dev_workflow.mdc](mdc:.cursor/rules/taskmaster/dev_workflow.mdc) para workflow completo
+
+- **Checklists de Revisão**
+  - **Antes do Commit:**
+    - [ ] Tipagem 100% TypeScript
+    - [ ] Validação Zod em payloads de API
+    - [ ] Uso correto de hooks Zustand/TanStack
+    - [ ] Componentes Shadcn sem CSS custom excessivo
+    - [ ] Logs com contexto de tenant
+    - [ ] Query keys incluem `tenantId`
+  - **Antes do Deploy:**
+    - [ ] Ambiente `.env` validado
+    - [ ] Build otimizado (`next build` sem warnings)
+    - [ ] Testes 100% passando
+    - [ ] Sentry DSN configurado
+    - [ ] Billing sandbox validado
+    - [ ] Cobertura de testes ≥ 80%
+
+- **Referências e Documentação**
+  - **Documentação do Projeto:**
+    - PRD principal: [pegasus-prd.txt](mdc:docs/pegasus-prd.txt)
+    - Diretrizes Cursor: [cursor-guidelines.md](mdc:docs/cursor-guidelines.md)
+  - **Regras de Arquitetura e Padrões:**
+    - [architecture.mdc](mdc:.cursor/rules/architecture.mdc) - Arquitetura e decisões técnicas
+    - [cursor_rules.mdc](mdc:.cursor/rules/cursor_rules.mdc) - Formato e estrutura de regras
+    - [self_improve.mdc](mdc:.cursor/rules/self_improve.mdc) - Melhoria contínua de regras
+  - **Regras Específicas do Projeto:**
+    - [performance.mdc](mdc:.cursor/rules/performance.mdc) - Diretrizes de performance e Core Web Vitals
+    - [security.mdc](mdc:.cursor/rules/security.mdc) - Segurança e boas práticas
+    - [seo.mdc](mdc:.cursor/rules/seo.mdc) - SEO, meta tags e otimização
+    - [validations.mdc](mdc:.cursor/rules/validations.mdc) - Validações com Zod e React Hook Form
+    - [zustand.mdc](mdc:.cursor/rules/zustand.mdc) - Gerenciamento de estado com Zustand
+    - [nielsen-heuristics.mdc](mdc:.cursor/rules/nielsen-heuristics.mdc) - Heurísticas de UX de Nielsen
+  - **Task Master Integration:**
+    - [dev_workflow.mdc](mdc:.cursor/rules/taskmaster/dev_workflow.mdc) - Workflow de desenvolvimento
+    - [taskmaster.mdc](mdc:.cursor/rules/taskmaster/taskmaster.mdc) - Referência de comandos e ferramentas
+  - **Documentação Externa:**
+    - Next.js 15 Docs
+    - Prisma ORM Docs
+    - Zustand & TanStack Query Patterns
+    - Tailwind v4 & Shadcn UI Guide
+    - Stripe & LemonSqueezy API Docs
+    - Sentry, Loki, Grafana Docs

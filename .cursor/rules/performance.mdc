@@ -1,0 +1,749 @@
+---
+description: Performance Guidelines - Diretrizes para otimização de desempenho e métricas Core Web Vitals
+globs: src/**/*.{ts,tsx}
+alwaysApply: true
+---
+
+# Performance Guidelines - Diretrizes de Desempenho
+
+## **Visão Geral**
+
+Diretrizes completas para otimização de desempenho web, incluindo Core Web Vitals, otimização de imagens, code splitting, cache eficiente, e prevenção de problemas de performance comuns.
+
+---
+
+## 📊 Core Web Vitals
+
+### **Métricas Essenciais**
+
+As métricas Core Web Vitals são indicadores críticos de experiência do usuário e são utilizadas pelo Google para ranking:
+
+#### **1. Largest Contentful Paint (LCP)**
+
+Tempo até o maior elemento visível ser renderizado. Meta: **< 2.5 segundos**.
+
+#### **✅ DO: Otimizar LCP**
+
+```typescript
+// ✅ DO: Lazy loading de imagens grandes
+<img
+  src="/hero-image.webp"
+  alt="Hero image"
+  title="Hero image"
+  loading="lazy"
+  decoding="async"
+  fetchpriority="high" // Apenas para imagem hero acima da dobra
+/>
+
+// ✅ DO: Preload de recursos críticos
+<link rel="preload" href="/fonts/main-font.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+<link rel="preload" href="/critical.css" as="style" />
+
+// ✅ DO: Otimizar fontes
+<link
+  rel="preconnect"
+  href="https://fonts.googleapis.com"
+  crossOrigin="anonymous"
+/>
+<link
+  rel="dns-prefetch"
+  href="https://fonts.googleapis.com"
+/>
+```
+
+#### **❌ DON'T: Bloquear Renderização com Recursos Não Críticos**
+
+```typescript
+// ❌ DON'T: Importar CSS pesado no início
+import "./heavy-styles.css"; // Bloqueia renderização
+
+// ❌ DON'T: Carregar imagens grandes sem otimização
+<img src="/huge-image.jpg" alt="Image" /> // Sem lazy loading
+
+// ❌ DON'T: Usar fontes sem preload
+@import url('https://fonts.googleapis.com/css2?family=...'); // Bloqueia renderização
+```
+
+#### **2. First Contentful Paint (FCP)**
+
+Tempo até o primeiro pixel de conteúdo ser renderizado. Meta: **< 1.8 segundos**.
+
+#### **✅ DO: Otimizar FCP**
+
+```typescript
+// ✅ DO: CSS crítico inline ou preload
+<style dangerouslySetInnerHTML={{ __html: criticalCSS }} />
+
+// ✅ DO: Remover render-blocking JavaScript
+// Usar async ou defer para scripts não críticos
+<script src="analytics.js" async />
+
+// ✅ DO: Minimizar JavaScript inicial
+// Code splitting para reduzir bundle inicial
+const HeavyComponent = lazy(() => import('./HeavyComponent'));
+```
+
+#### **3. Cumulative Layout Shift (CLS)**
+
+Estabilidade visual - mudanças inesperadas de layout. Meta: **< 0.1**.
+
+#### **✅ DO: Prevenir Layout Shift**
+
+```typescript
+// ✅ DO: Definir dimensões de imagens
+<img
+  src="/image.webp"
+  alt="Image"
+  title="Image"
+  width={800}
+  height={600}
+  loading="lazy"
+/>
+
+// ✅ DO: Reservar espaço para elementos dinâmicos
+<div className="h-64 w-full bg-gray-100 animate-pulse">
+  {/* Skeleton loader mantém espaço */}
+</div>
+
+// ✅ DO: Usar aspect-ratio para containers
+<div className="aspect-video w-full">
+  <img src="/video-thumbnail.webp" alt="Thumbnail" />
+</div>
+
+// ✅ DO: Evitar inserir conteúdo acima do conteúdo existente
+// Usar transform ou position: absolute quando necessário
+```
+
+#### **❌ DON'T: Causar Layout Shift**
+
+```typescript
+// ❌ DON'T: Imagens sem dimensões
+<img src="/image.jpg" alt="Image" /> // Causa CLS
+
+// ❌ DON'T: Fontes sem fallback adequado
+// FOUC (Flash of Unstyled Content) causa CLS
+
+// ❌ DON'T: Adicionar conteúdo dinâmico sem reservar espaço
+{data && <div>{data}</div>} // Pode causar shift se data chegar depois
+```
+
+#### **4. Interaction to Next Paint (INP)**
+
+Tempo de resposta a interações do usuário. Meta: **< 200 milissegundos**.
+
+#### **✅ DO: Otimizar Interatividade**
+
+```typescript
+// ✅ DO: Debounce em inputs pesados
+import { useDebouncedCallback } from 'use-debounce';
+
+function SearchInput() {
+  const [search, setSearch] = useState('');
+  
+  const debouncedSearch = useDebouncedCallback(
+    (value: string) => {
+      // Executar busca apenas após 300ms de inatividade
+      performSearch(value);
+    },
+    300
+  );
+  
+  return (
+    <input
+      value={search}
+      onChange={(e) => {
+        setSearch(e.target.value);
+        debouncedSearch(e.target.value);
+      }}
+    />
+  );
+}
+
+// ✅ DO: Usar requestIdleCallback para tarefas não críticas
+if ('requestIdleCallback' in window) {
+  requestIdleCallback(() => {
+    // Processar dados não críticos
+    processAnalytics();
+  });
+}
+
+// ✅ DO: Web Workers para processamento pesado
+const worker = new Worker('/analytics-worker.js');
+worker.postMessage({ data: heavyData });
+```
+
+#### **5. Total Blocking Time (TBT)**
+
+Tempo total que o thread principal está bloqueado. Meta: **< 200 milissegundos**.
+
+#### **✅ DO: Reduzir TBT**
+
+```typescript
+// ✅ DO: Code splitting e lazy loading
+const Dashboard = lazy(() => import('./Dashboard'));
+const Settings = lazy(() => import('./Settings'));
+
+// ✅ DO: Usar React.memo para componentes pesados
+export const ExpensiveComponent = React.memo(({ data }) => {
+  // Componente que renderiza muitos itens
+  return <div>{/* ... */}</div>;
+});
+
+// ✅ DO: Virtualização para listas grandes
+import { useVirtualizer } from '@tanstack/react-virtual';
+
+function VirtualizedList({ items }) {
+  const parentRef = useRef();
+  const virtualizer = useVirtualizer({
+    count: items.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 50,
+  });
+  
+  return (
+    <div ref={parentRef} className="h-96 overflow-auto">
+      <div style={{ height: `${virtualizer.getTotalSize()}px` }}>
+        {virtualizer.getVirtualItems().map((virtualItem) => (
+          <div key={virtualItem.key}>{items[virtualItem.index]}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+#### **6. Speed Index**
+
+Tempo até o conteúdo visível ser preenchido. Meta: **< 3.4 segundos**.
+
+#### **✅ DO: Otimizar Speed Index**
+
+```typescript
+// ✅ DO: Priorizar conteúdo acima da dobra
+// Renderizar conteúdo crítico primeiro
+
+// ✅ DO: Skeleton loaders para conteúdo assíncrono
+function DataCardSkeleton() {
+  return (
+    <div className="animate-pulse">
+      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+      <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+    </div>
+  );
+}
+
+// ✅ DO: Progressive loading
+// Carregar imagens em qualidade baixa primeiro, depois alta
+```
+
+---
+
+## 🖼️ Otimização de Imagens
+
+### **✅ DO: Boas Práticas de Imagens**
+
+```typescript
+// ✅ DO: Formatos modernos (WebP, AVIF)
+<picture>
+  <source srcSet="/image.avif" type="image/avif" />
+  <source srcSet="/image.webp" type="image/webp" />
+  <img src="/image.jpg" alt="Image" title="Image" loading="lazy" />
+</picture>
+
+// ✅ DO: Responsive images com srcSet
+<img
+  srcSet="/image-320w.webp 320w,
+          /image-640w.webp 640w,
+          /image-1280w.webp 1280w"
+  sizes="(max-width: 640px) 320px,
+         (max-width: 1280px) 640px,
+         1280px"
+  src="/image-1280w.webp"
+  alt="Image"
+  title="Image"
+  loading="lazy"
+/>
+
+// ✅ DO: Lazy loading (exceto para imagens acima da dobra)
+<img
+  src="/below-fold-image.webp"
+  alt="Image"
+  title="Image"
+  loading="lazy"
+  decoding="async"
+/>
+
+// ✅ DO: fetchpriority para imagens críticas
+<img
+  src="/hero-image.webp"
+  alt="Hero"
+  title="Hero"
+  fetchpriority="high"
+  loading="eager"
+/>
+
+// ✅ DO: Dimensões explícitas para prevenir CLS
+<img
+  src="/image.webp"
+  alt="Image"
+  title="Image"
+  width={800}
+  height={600}
+  loading="lazy"
+/>
+```
+
+#### **❌ DON'T: Imagens Não Otimizadas**
+
+```typescript
+// ❌ DON'T: Imagens sem otimização
+<img src="/huge-image.jpg" alt="Image" /> // Sem lazy, sem formato moderno
+
+// ❌ DON'T: Lazy loading em imagens acima da dobra
+<img src="/hero.jpg" loading="lazy" /> // Deve ser "eager"
+
+// ❌ DON'T: Imagens sem dimensões
+<img src="/image.jpg" /> // Causa CLS
+```
+
+---
+
+## 📦 Code Splitting e Lazy Loading
+
+### **✅ DO: Code Splitting Inteligente**
+
+```typescript
+// ✅ DO: Lazy loading de rotas
+import { lazy, Suspense } from 'react';
+
+const Dashboard = lazy(() => import('./Dashboard'));
+const Settings = lazy(() => import('./Settings'));
+
+function App() {
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <Routes>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/settings" element={<Settings />} />
+      </Routes>
+    </Suspense>
+  );
+}
+
+// ✅ DO: Lazy loading de componentes pesados
+const ChartComponent = lazy(() => import('./ChartComponent'));
+const DataTable = lazy(() => import('./DataTable'));
+
+// ✅ DO: Dynamic imports condicionais
+const loadFeature = async () => {
+  if (shouldLoadFeature()) {
+    const { FeatureComponent } = await import('./FeatureComponent');
+    return FeatureComponent;
+  }
+  return null;
+};
+
+// ✅ DO: Preload de rotas prováveis
+const preloadRoute = (routeLoader: () => Promise<unknown>) => {
+  const link = document.createElement('link');
+  link.rel = 'prefetch';
+  link.as = 'script';
+  link.href = routeLoader.toString();
+  document.head.appendChild(link);
+};
+
+// Preload ao hover
+<Link
+  to="/dashboard"
+  onMouseEnter={() => preloadRoute(() => import('./Dashboard'))}
+>
+  Dashboard
+</Link>
+```
+
+#### **❌ DON'T: Importações Síncronas de Componentes Grandes**
+
+```typescript
+// ❌ DON'T: Importar tudo de uma vez
+import { HeavyComponent1, HeavyComponent2, HeavyComponent3 } from './components';
+
+// ❌ DON'T: Lazy loading desnecessário para componentes pequenos
+// Componentes < 10KB não precisam de lazy loading
+const SmallButton = lazy(() => import('./SmallButton')); // Não é necessário
+```
+
+---
+
+## 💾 Cache Eficiente
+
+### **✅ DO: Estratégias de Cache**
+
+```typescript
+// ✅ DO: React Query com staleTime apropriado
+export function useDashboardData() {
+  return useQuery({
+    queryKey: ['dashboard'],
+    queryFn: fetchDashboardData,
+    staleTime: 5 * 60 * 1000, // 5 minutos - dados frescos
+    gcTime: 10 * 60 * 1000, // 10 minutos - cache mantido
+    refetchOnWindowFocus: false, // Evitar refetch desnecessário
+  });
+}
+
+// ✅ DO: Service Workers para cache offline
+// Implementar estratégia cache-first para assets estáticos
+
+// ✅ DO: HTTP Cache Headers (backend)
+// Cache-Control: public, max-age=31536000, immutable (para assets estáticos)
+// Cache-Control: public, max-age=300, must-revalidate (para dados dinâmicos)
+
+// ✅ DO: Memoização de cálculos pesados
+import { useMemo } from 'react';
+
+function ExpensiveComponent({ data }) {
+  const processedData = useMemo(() => {
+    // Cálculo pesado
+    return heavyProcessing(data);
+  }, [data]);
+  
+  return <div>{processedData}</div>;
+}
+
+// ✅ DO: React.memo para componentes que recebem props estáveis
+export const MemoizedCard = React.memo(({ title, value }) => {
+  return (
+    <Card>
+      <CardTitle>{title}</CardTitle>
+      <CardValue>{value}</CardValue>
+    </Card>
+  );
+});
+```
+
+#### **❌ DON'T: Cache Ineficiente**
+
+```typescript
+// ❌ DON'T: Refetch desnecessário
+useQuery({
+  queryKey: ['data'],
+  queryFn: fetchData,
+  refetchOnWindowFocus: true, // Pode ser desnecessário
+  refetchInterval: 1000, // Muito frequente
+});
+
+// ❌ DON'T: Sem cache para dados estáticos
+// Dados que raramente mudam devem ter staleTime alto
+
+// ❌ DON'T: Recalcular em cada render
+function Component({ data }) {
+  const processed = heavyProcessing(data); // Recalcula sempre
+  return <div>{processed}</div>;
+}
+```
+
+---
+
+## 🚫 Prevenção de Reflow Forçado
+
+### **✅ DO: Evitar Reflows Desnecessários**
+
+```typescript
+// ✅ DO: Ler propriedades antes de escrever
+function optimizeLayout() {
+  // Ler todas as propriedades primeiro
+  const width = element.offsetWidth;
+  const height = element.offsetHeight;
+  const scrollTop = element.scrollTop;
+  
+  // Depois fazer todas as modificações
+  element.style.width = `${width + 10}px`;
+  element.style.height = `${height + 10}px`;
+  element.scrollTop = scrollTop + 10;
+}
+
+// ✅ DO: Usar transform em vez de position/width/height
+// Transform não causa reflow
+<div className="transform translate-x-4 scale-105" />
+
+// ✅ DO: Usar will-change para animações
+<div className="will-change-transform" style={{ transform: `translateX(${x}px)` }} />
+
+// ✅ DO: Batch DOM updates
+// React já faz isso automaticamente, mas cuidado com manipulação direta
+requestAnimationFrame(() => {
+  // Todas as mudanças de DOM aqui
+  element1.style.width = '100px';
+  element2.style.height = '200px';
+});
+```
+
+#### **❌ DON'T: Causar Reflows Desnecessários**
+
+```typescript
+// ❌ DON'T: Alternar entre ler e escrever
+function badLayout() {
+  element.style.width = '100px';
+  const width = element.offsetWidth; // Reflow forçado
+  element.style.height = `${width}px`;
+  const height = element.offsetHeight; // Reflow forçado
+}
+
+// ❌ DON'T: Modificar layout em loops
+for (let i = 0; i < 1000; i++) {
+  element.style.left = `${i}px`; // Reflow a cada iteração
+}
+
+// ❌ DON'T: Acessar propriedades de layout após modificações
+element.style.display = 'none';
+const width = element.offsetWidth; // Reflow
+```
+
+---
+
+## 🌐 Otimização de Rede
+
+### **✅ DO: Otimizar Requisições**
+
+```typescript
+// ✅ DO: Debounce em buscas
+import { useDebouncedCallback } from 'use-debounce';
+
+function SearchInput() {
+  const debouncedSearch = useDebouncedCallback(
+    (value: string) => fetchResults(value),
+    300
+  );
+  
+  return <input onChange={(e) => debouncedSearch(e.target.value)} />;
+}
+
+// ✅ DO: Request deduplication (React Query faz isso automaticamente)
+// Múltiplas chamadas com mesma queryKey são deduplicadas
+
+// ✅ DO: Paginação e infinite scroll
+function useInfiniteData() {
+  return useInfiniteQuery({
+    queryKey: ['items'],
+    queryFn: ({ pageParam = 0 }) => fetchItems(pageParam),
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+  });
+}
+
+// ✅ DO: Prefetch de dados prováveis
+const queryClient = useQueryClient();
+
+function onHover() {
+  queryClient.prefetchQuery({
+    queryKey: ['dashboard'],
+    queryFn: fetchDashboardData,
+  });
+}
+
+// ✅ DO: Otimistic updates
+const mutation = useMutation({
+  mutationFn: updateItem,
+  onMutate: async (newItem) => {
+    // Cancelar queries em andamento
+    await queryClient.cancelQueries({ queryKey: ['items'] });
+    
+    // Snapshot do estado anterior
+    const previousItems = queryClient.getQueryData(['items']);
+    
+    // Atualização otimista
+    queryClient.setQueryData(['items'], (old: Item[]) => [
+      ...old,
+      newItem,
+    ]);
+    
+    return { previousItems };
+  },
+  onError: (err, newItem, context) => {
+    // Rollback em caso de erro
+    queryClient.setQueryData(['items'], context.previousItems);
+  },
+});
+```
+
+#### **❌ DON'T: Requisições Ineficientes**
+
+```typescript
+// ❌ DON'T: Fetch sem debounce em inputs
+<input onChange={(e) => fetchData(e.target.value)} /> // Muitas requisições
+
+// ❌ DON'T: Buscar todos os dados de uma vez
+fetchAllData(); // Pode ser muito pesado
+
+// ❌ DON'T: Sem cache
+fetchData(); // Sempre busca do servidor
+```
+
+---
+
+## 📊 Bundle Size e Tree Shaking
+
+### **✅ DO: Minimizar Bundle Size**
+
+```typescript
+// ✅ DO: Importações específicas
+import { Button } from '@/components/ui/button'; // ✅
+// Não: import * from '@/components/ui';
+
+// ✅ DO: Usar tree-shaking friendly libraries
+import { format } from 'date-fns'; // ✅
+// Não: import dateFns from 'date-fns';
+
+// ✅ DO: Analisar bundle size
+// npm run build -- --analyze
+// ou usar vite-bundle-visualizer
+
+// ✅ DO: Remover dependências não utilizadas
+// npm audit e npm prune regularmente
+
+// ✅ DO: Usar dynamic imports para bibliotecas grandes
+const loadChartLibrary = async () => {
+  const { Chart } = await import('chart.js');
+  return Chart;
+};
+```
+
+#### **❌ DON'T: Bundle Size Desnecessário**
+
+```typescript
+// ❌ DON'T: Importar bibliotecas completas
+import _ from 'lodash'; // Muito pesado
+import * as dateFns from 'date-fns'; // Importa tudo
+
+// ❌ DON'T: Dependências duplicadas
+// Verificar package.json para duplicações
+
+// ❌ DON'T: Assets não otimizados
+// Imagens grandes, fontes não subsetadas
+```
+
+---
+
+## 🔧 Ferramentas de Monitoramento
+
+### **✅ DO: Implementar Web Vitals**
+
+```typescript
+// ✅ DO: Configurar Web Vitals
+import { reportWebVitals } from '@/core/utils/web-vitals';
+import { ENV_CONFIG } from '@/core/config/env.config';
+
+// No main.tsx ou App.tsx
+if (ENV_CONFIG.VITE_ENABLE_WEB_VITALS === 'true') {
+  reportWebVitals((metric) => {
+    // Enviar para Sentry ou analytics
+    console.log('[WebVitals]', metric.name, metric.value);
+    
+    // Enviar para Sentry
+    if (metric.value > threshold) {
+      Sentry.captureMessage(`Poor ${metric.name}: ${metric.value}`, 'warning');
+    }
+  });
+}
+
+// ✅ DO: Monitorar performance com Sentry
+import * as Sentry from '@sentry/react';
+
+Sentry.init({
+  tracesSampleRate: 1.0, // Em desenvolvimento
+  // tracesSampleRate: 0.1, // Em produção
+});
+
+// ✅ DO: Performance marks e measures
+performance.mark('component-start');
+// ... código do componente ...
+performance.mark('component-end');
+performance.measure('component-render', 'component-start', 'component-end');
+```
+
+### **✅ DO: Lighthouse CI**
+
+```bash
+# ✅ DO: Executar Lighthouse em CI/CD
+npm install -g @lhci/cli
+lhci autorun --config=lighthouserc.json
+```
+
+### **✅ DO: Bundle Analyzer**
+
+```bash
+# ✅ DO: Analisar bundle size
+npm install --save-dev vite-bundle-visualizer
+# Adicionar ao vite.config.ts
+```
+
+---
+
+## 🎯 Checklist de Performance
+
+### **Core Web Vitals**
+
+- [ ] LCP < 2.5 segundos
+- [ ] FCP < 1.8 segundos
+- [ ] CLS < 0.1
+- [ ] INP < 200 milissegundos
+- [ ] TBT < 200 milissegundos
+- [ ] Speed Index < 3.4 segundos
+
+### **Otimizações de Imagens**
+
+- [ ] Todas as imagens têm `alt` e `title`
+- [ ] Imagens usam formatos modernos (WebP, AVIF)
+- [ ] Lazy loading em imagens abaixo da dobra
+- [ ] Dimensões explícitas para prevenir CLS
+- [ ] Responsive images com `srcSet` quando necessário
+- [ ] `fetchpriority="high"` apenas para imagens hero críticas
+
+### **Code Splitting**
+
+- [ ] Rotas com lazy loading
+- [ ] Componentes pesados com lazy loading
+- [ ] Suspense boundaries apropriados
+- [ ] Preload de rotas prováveis
+
+### **Cache**
+
+- [ ] React Query configurado com `staleTime` apropriado
+- [ ] Memoização de cálculos pesados
+- [ ] React.memo para componentes que recebem props estáveis
+- [ ] HTTP Cache Headers configurados no backend
+
+### **Rede**
+
+- [ ] Debounce em buscas e inputs
+- [ ] Paginação ou infinite scroll para listas grandes
+- [ ] Prefetch de dados prováveis
+- [ ] Otimistic updates quando apropriado
+
+### **Bundle**
+
+- [ ] Bundle size analisado e otimizado
+- [ ] Tree shaking funcionando corretamente
+- [ ] Dependências não utilizadas removidas
+- [ ] Imports específicos (não `import *`)
+
+### **Monitoramento**
+
+- [ ] Web Vitals configurado e enviando métricas
+- [ ] Sentry rastreando performance
+- [ ] Lighthouse CI configurado
+- [ ] Bundle analyzer configurado
+
+---
+
+## 📚 Referências
+
+- [Web Vitals](https://web.dev/vitals/)
+- [Core Web Vitals](https://web.dev/vitals/)
+- [Lighthouse](https://developers.google.com/web/tools/lighthouse)
+- [React Performance Optimization](https://react.dev/learn/render-and-commit)
+- [Vite Performance Guide](https://vitejs.dev/guide/performance.html)
+- [Web.dev Performance](https://web.dev/performance/)
+
+---
+
+**Última atualização**: 2024  
+**Versão**: 1.0.0

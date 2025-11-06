@@ -1,0 +1,263 @@
+# PRD – Plataforma Pegasus
+> SaaS de torneios corporativos multi-modalidade e engajamento esportivo interno  
+
+<overview>
+
+### 🧩 Problema  
+Empresas organizam eventos esportivos internos de forma manual (planilhas, WhatsApp, formulários), gerando baixa adesão, falta de histórico e dificuldade de mensurar engajamento.  
+
+### 👥 Usuários-alvo  
+1. **RH / Endomarketing:** promove torneios e campanhas internas.  
+2. **Colaboradores:** participam, criam equipes e acompanham resultados.  
+3. **Agências externas:** gerenciam múltiplas empresas via white-label.  
+
+### 🎯 Métricas de sucesso  
+- Criação de torneio em **< 10 min**.  
+- Adesão ≥ 80 % entre convidados.  
+- Retenção mensal ≥ 70 %.  
+- Tempo médio de resposta da API < 200 ms.  
+
+</overview>
+
+---
+
+<functional-decomposition>
+
+## Capability: Tenant & Autenticação
+- **Descrição:** controlar acesso e identidade visual por empresa.  
+- **Features:**
+  - **Login corporativo (SSO)** — Auth.js com Google/Microsoft.  
+  - **Branding dinâmico** — logo, cores, domínio e tema por tenant.  
+  - **Gestão de usuários** — convites, papéis (admin, atleta, organizador).
+
+## Capability: Eventos & Modalidades
+- **Descrição:** permitir criação e acompanhamento de torneios e amistosos.  
+- **Features:**
+  - **CRUD de torneios e modalidades** — Futebol, Vôlei, Beach Tennis, etc.  
+  - **Geração automática de chaves** — simples, dupla, grupos, pontos corridos.  
+  - **Agendamento de partidas** — calendário e reservas de horário/arena.  
+
+## Capability: Gamificação & Campanhas
+- **Descrição:** aumentar engajamento por meio de ranking e conquistas.  
+- **Features:**
+  - **Sistema de pontuação e ranking** — individual e por equipe.  
+  - **Badges e conquistas** — performance, participação, fair play.  
+  - **Campanhas temáticas** — ex.: Outubro Rosa, Copa Interna.  
+
+## Capability: Compartilhamento & Engajamento
+- **Descrição:** divulgar resultados e interações internas.  
+- **Features:**
+  - **Página pública de resultados** — link externo da empresa.  
+  - **Feed interno multimídia** — fotos, vídeos, comentários.  
+  - **Notificações push e e-mail** — via OneSignal / Resend.  
+
+## Capability: Administração & Billing
+- **Descrição:** gestão multi-empresa e cobrança automática.  
+- **Features:**
+  - **Painel multi-tenant** — métricas e relatórios por organização.  
+  - **Integração de billing** — Stripe / LemonSqueezy (planos mensais).  
+  - **Monitoramento e logs** — Sentry + Loki + Grafana.  
+
+</functional-decomposition>
+
+---
+
+<structural-decomposition>
+
+```
+project-root/
+├── src/
+│   ├── core/                 # Config, logger, env, Prisma
+│   ├── auth/                 # SSO + tenant management
+│   ├── events/               # CRUD torneios e modalidades
+│   ├── matches/              # Geração de chaves e agenda
+│   ├── gamification/         # Ranking, badges, campanhas
+│   ├── sharing/              # Feed e páginas públicas
+│   ├── billing/              # Stripe/LemonSqueezy integração
+│   ├── ui/                   # Tailwind + Shadcn components
+│   └── hooks/                # Zustand stores + TanStack Query
+├── prisma/
+│   ├── schema.prisma
+│   └── seed.ts
+├── tests/
+│   ├── unit/
+│   ├── integration/
+│   └── e2e/
+└── docs/
+```
+
+**Exports públicos principais**
+- `useAuthStore`, `useEventStore`, `useRankingStore` (Zustand)  
+- `api/` rotas REST / GraphQL (Next API Routes)  
+- `components/` (Shadcn UI personalizados)  
+
+</structural-decomposition>
+
+---
+
+<dependency-graph>
+
+### 🧱 Foundation (Phase 0)
+Sem dependências diretas.  
+- **core** → logging, configuração, conexão Prisma.  
+- **ui** → base visual (Tailwind v4 + Shadcn UI).  
+
+### 🔐 Layer 1 – Autenticação
+- **auth** → depende de [core, ui].  
+
+### 🏆 Layer 2 – Eventos & Partidas
+- **events** → depende de [core, auth].  
+- **matches** → depende de [events, core].  
+
+### 🎮 Layer 3 – Gamificação
+- **gamification** → depende de [matches, events].  
+
+### 🌐 Layer 4 – Compartilhamento & Billing
+- **sharing** → depende de [gamification, events].  
+- **billing** → depende de [core, auth].  
+
+</dependency-graph>
+
+---
+
+<implementation-roadmap>
+
+### Phase 0 – Foundation
+**Goal:** estabelecer base técnica e design system.  
+**Entry Criteria:** repositório limpo.  
+**Tasks:**
+- [ ] Implementar `core` (config, logger, env) — *sem dependências*.  
+- [ ] Configurar Prisma + PostgreSQL.  
+- [ ] Setup Tailwind v4 + Shadcn UI (theme tokens, layout base).  
+**Exit Criteria:** app renderiza layout base e conecta DB.  
+
+### Phase 1 – Auth & Tenant
+**Goal:** autenticação multi-empresa funcional.  
+**Tasks:**
+- [ ] Implementar Auth.js (Google/Microsoft).  
+- [ ] Criar modelos `Tenant`, `User`, `Role`.  
+- [ ] Adicionar `useAuthStore` (Zustand + persist sessionStorage).  
+**Exit Criteria:** login/logout funcionando; tenant isolado.  
+
+### Phase 2 – Eventos & Partidas
+**Goal:** permitir criação de torneios e agendamentos.  
+**Tasks:**
+- [ ] CRUD Eventos (Next API Routes + TanStack Query).  
+- [ ] Geração automática de chaves (BullMQ worker).  
+- [ ] Calendário de partidas (DayPicker + React Query).  
+**Exit Criteria:** torneio criado e partidas visíveis na UI.  
+
+### Phase 3 – Gamificação
+**Goal:** ranking e conquistas automáticas.  
+**Tasks:**
+- [ ] Sistema de pontuação & ranking global.  
+- [ ] Tabela de conquistas e badges.  
+- [ ] Store `useRankingStore`.  
+**Exit Criteria:** ranking visível e atualizado por evento.  
+
+### Phase 4 – Compartilhamento & Billing
+**Goal:** engajamento e monetização.  
+**Tasks:**
+- [ ] Página pública de resultados (SEO + OpenGraph).  
+- [ ] Feed interno com upload S3 / Cloudflare Images.  
+- [ ] Integração Stripe / LemonSqueezy + trial 7 dias.  
+- [ ] Observabilidade (Sentry + Loki + Grafana).  
+**Exit Criteria:** billing funcional, logs operando, link público ativo.  
+
+</implementation-roadmap>
+
+---
+
+<test-strategy>
+
+### Pirâmide de testes
+```
+        /\
+       /E2E\        ← 10 %
+      /------\
+     /Integration\  ← 20 %
+    /------------\
+   /  Unit Tests  \← 70 %
+  /----------------\
+```
+**Cobertura mínima:** 80 % linhas / 70 % branches.  
+**Frameworks:** Vitest + Testing Library + Playwright.  
+
+### Casos críticos
+- Login SSO multi-tenant.  
+- Geração de chave de torneio.  
+- Cálculo de ranking.  
+- Fluxo de cobrança e trial.  
+
+</test-strategy>
+
+---
+
+<architecture>
+
+### Componentes principais
+- **Frontend Next.js 15 + React 19** — SSR, app router, caching estático.  
+- **Backend** — Next API Routes (Node 18+) + Prisma ORM.  
+- **Auth** — NextAuth + JWT assinado, suporte SSO.  
+- **DB** — PostgreSQL (tenantId por tabela).  
+- **State** — Zustand + TanStack Query (persistência e cache).  
+- **Design System** — Tailwind v4 + Shadcn UI tokens.  
+- **Infra** — Vercel (front) + AWS ECS/RDS (back) + Redis (BullMQ).  
+- **Billing** — Stripe / LemonSqueezy.  
+- **Monitoring** — Sentry + Loki + Grafana.  
+- **Storage** — AWS S3 ou Cloudflare R2.  
+
+**Decision examples**
+- **Next API Routes**  
+  - ✅ Simplifica monorepo. ⚠️ Limite de execução em Vercel > usar ECS p/ jobs.  
+- **Prisma ORM**  
+  - ✅ Produtividade alta. ⚠️ Cuidado com migrations multi-tenant.  
+- **Zustand + TanStack Query**  
+  - ✅ Performance excelente e controle explícito. ⚠️ Manter sincronização clara.  
+
+</architecture>
+
+---
+
+<risks>
+
+### Técnicos
+- **Complexidade multi-tenant** — alta; mitigar com testes isolados por tenant.  
+- **Geração de chaves esportivas** — algoritmos variados; usar estrutura plugável.  
+- **Limites de execução Vercel** — mover jobs para ECS.  
+
+### Dependências
+- Stripe/LemonSqueezy APIs; fallback = modo manual de pagamento.  
+- Autenticação Google/Microsoft (SSO).  
+
+### Escopo
+- Evitar suporte a demasiadas modalidades no MVP → iniciar com futebol e vôlei.  
+
+</risks>
+
+---
+
+<appendix>
+**Referências**  
+- Microsoft RPG Methodology (Task-Master parser).  
+- Next.js 15 docs.  
+- Zustand + TanStack Query patterns.  
+- Nielsen Heuristics (UX).  
+- Arquivos locais *.mdc (architecture, performance, security, seo, validations).  
+
+**Glossário**  
+- *Tenant:* empresa ou organização com branding próprio.  
+- *Match:* partida agendada entre equipes.  
+- *Campaign:* evento especial com pontuação extra.  
+
+</appendix>
+
+---
+
+<task-master-integration>
+1. Cada `Capability` vira uma *task principal*.  
+2. Cada `Feature` gera subtasks.  
+3. As dependências definem ordem topológica (foundation → layers).  
+4. Fases alimentam o cronograma do orquestrador.  
+5. As seções `test-strategy` e `architecture` guiam geração de testes e setup do Cursor.  
+</task-master-integration>
