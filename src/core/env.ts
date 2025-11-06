@@ -38,6 +38,13 @@ const envSchema = z.object({
   LOKI_USERNAME: z.string().optional(),
   LOKI_PASSWORD: z.string().optional(),
 
+  // Emails (Resend)
+  RESEND_API_KEY: z.string().optional(),
+  RESEND_FROM: z
+    .string()
+    .email("RESEND_FROM deve ser um email válido")
+    .optional(),
+
   // Storage (opcionais)
   AWS_ACCESS_KEY_ID: z.string().optional(),
   AWS_SECRET_ACCESS_KEY: z.string().optional(),
