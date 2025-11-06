@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 
-import { env } from "@/core/env";
+import { env } from "../env";
 
 const resend = new Resend(env.RESEND_API_KEY);
 const DEFAULT_FROM = env.RESEND_FROM || "no-reply@pegasus.local";
