@@ -1,5 +1,7 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
+import type { User } from "next-auth";
 import NextAuth from "next-auth";
+import type { JWT } from "next-auth/jwt";
 import Google from "next-auth/providers/google";
 
 import { env } from "@/core/env";
@@ -23,26 +25,43 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       : []),
   ],
   callbacks: {
-    async jwt({ token, user }) {
-      // Em sign-in, o objeto user vem preenchido; depois, apenas token
+    async jwt({ token, user }): Promise<JWT> {
+      type AugmentedUser = Pick<User, "name" | "email" | "image"> & {
+        id?: string;
+        tenantId?: string;
+        role?: string;
+      };
+      type AugmentedToken = JWT & {
+        id?: string;
+        tenantId?: string;
+        role?: string;
+      };
+
+      const t = token as AugmentedToken;
       if (user) {
-        // @ts-expect-error Campos do schema Prisma
-        token.id = user.id;
-        // @ts-expect-error Campo multi-tenant
-        token.tenantId = user.tenantId;
-        // @ts-expect-error Enum Role
-        token.role = user.role;
+        const u = user as AugmentedUser;
+        t.id = u.id; // id pode não existir em alguns providers
+        t.tenantId = u.tenantId;
+        t.role = u.role;
       }
-      return token;
+      return t;
     },
     async session({ session, token }) {
+      type AugmentedToken = JWT & {
+        id?: string;
+        tenantId?: string;
+        role?: string;
+      };
+      const t = token as AugmentedToken;
       if (session.user) {
-        // @ts-expect-error augmentado em types
-        session.user.id = token.id as string | undefined;
-        // @ts-expect-error augmentado em types
-        session.user.tenantId = token.tenantId as string | undefined;
-        // @ts-expect-error augmentado em types
-        session.user.role = (token.role as string | undefined) ?? "ATHLETE";
+        (session.user as { id?: string; tenantId?: string; role?: string }).id =
+          t.id;
+        (
+          session.user as { id?: string; tenantId?: string; role?: string }
+        ).tenantId = t.tenantId;
+        (
+          session.user as { id?: string; tenantId?: string; role?: string }
+        ).role = t.role ?? "ATHLETE";
       }
       return session;
     },
