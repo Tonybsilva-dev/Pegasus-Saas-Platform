@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,4 +8,153 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum Role {
+  OWNER // Proprietário do tenant
+  ADMIN // Administrador
+  ORGANIZER // Organizador de eventos
+  ATHLETE // Atleta/participante (default)
+}
+
+enum TenantPlan {
+  FREE // Plano gratuito
+  PRO // Plano profissional
+  ENTERPRISE // Plano corporativo
+}
+
+// ============================================
+// TENANT (Multi-tenant Architecture)
+// ============================================
+
+model Tenant {
+  id             String   @id @default(cuid())
+  name           String
+  slug           String   @unique
+  domain         String?  @unique // Para white-label (ex: empresa.pegasus.app)
+  logoUrl        String?
+  primaryColor   String   @default("#1E40AF") // Hex color code
+  secondaryColor String   @default("#9333EA") // Hex color code
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Billing
+  plan                   TenantPlan @default(FREE)
+  stripeCustomerId       String?    @unique
+  stripeSubscriptionId   String?
+  lemonSqueezyCustomerId String?
+  currentPeriodEnd       DateTime?
+  trialEndsAt            DateTime?
+
+  // Relations
+  users    User[]
+  events   Event[]
+  sessions Session[]
+
+  @@index([slug])
+  @@index([domain])
+  @@map("tenants")
+}
+
+// ============================================
+// USER & AUTHENTICATION (Auth.js + SSO)
+// ============================================
+
+model User {
+  id             String    @id @default(cuid())
+  tenantId       String
+  email          String
+  name           String?
+  image          String? // NextAuth padrão
+  role           Role      @default(ATHLETE)
+  isActive       Boolean   @default(true)
+  emailVerified  DateTime?
+  hashedPassword String? // Opcional (SSO users podem não ter)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Relations
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sessions      Session[]
+  accounts      Account[]
+  eventsCreated Event[]   @relation("UserEventsCreated")
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@index([email])
+  @@map("users")
+}
+
+// ============================================
+// AUTH.JS PRISMA ADAPTER (Session & Account)
+// ============================================
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  tenantId     String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tenantId])
+  @@index([sessionToken])
+  @@map("sessions")
+}
+
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  tenantId          String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?  @db.Text
+  access_token      String?  @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?  @db.Text
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@index([tenantId])
+  @@map("accounts")
+}
+
+// ============================================
+// EVENT (Placeholder para futuras implementações)
+// ============================================
+
+model Event {
+  id        String   @id @default(cuid())
+  tenantId  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant      Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy   User?   @relation("UserEventsCreated", fields: [createdById], references: [id])
+  createdById String?
+
+  @@index([tenantId])
+  @@map("events")
 }
