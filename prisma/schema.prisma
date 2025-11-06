@@ -46,6 +46,13 @@ enum TeamRole {
   COACH
 }
 
+enum MatchStatus {
+  SCHEDULED
+  IN_PROGRESS
+  FINISHED
+  CANCELED
+}
+
 // ============================================
 // TENANT (Multi-tenant Architecture)
 // ============================================
@@ -71,12 +78,14 @@ model Tenant {
   trialEndsAt            DateTime?
 
   // Relations
-  users       User[]
-  events      Event[]
-  sessions    Session[]
-  modalities  Modality[]
-  teams       Team[]
-  teamMembers TeamMember[]
+  users        User[]
+  events       Event[]
+  sessions     Session[]
+  modalities   Modality[]
+  teams        Team[]
+  teamMembers  TeamMember[]
+  matches      Match[]
+  matchResults MatchResult[]
 
   @@index([slug])
   @@index([domain])
@@ -185,6 +194,7 @@ model Event {
   tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   createdBy  User?      @relation("UserEventsCreated", fields: [createdById], references: [id])
   modalities Modality[]
+  matches    Match[]
 
   @@index([tenantId])
   @@map("events")
@@ -206,9 +216,10 @@ model Modality {
   updatedAt   DateTime     @updatedAt
 
   // Relations
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  event  Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  teams  Team[]
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  event   Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  teams   Team[]
+  matches Match[]
 
   @@unique([tenantId, eventId, name])
   @@index([tenantId])
@@ -231,9 +242,12 @@ model Team {
   updatedAt  DateTime @updatedAt
 
   // Relations
-  tenant   Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  modality Modality     @relation(fields: [modalityId], references: [id], onDelete: Cascade)
-  members  TeamMember[]
+  tenant          Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  modality        Modality     @relation(fields: [modalityId], references: [id], onDelete: Cascade)
+  members         TeamMember[]
+  matchesAsTeamA  Match[]      @relation("TeamA")
+  matchesAsTeamB  Match[]      @relation("TeamB")
+  matchesAsWinner Match[]      @relation("Winner")
 
   @@unique([tenantId, modalityId, name])
   @@index([tenantId])
@@ -257,4 +271,65 @@ model TeamMember {
   @@unique([tenantId, userId, teamId])
   @@index([tenantId])
   @@map("team_members")
+}
+
+// ============================================
+// MATCH (Partida)
+// ============================================
+
+model Match {
+  id          String      @id @default(cuid())
+  tenantId    String
+  eventId     String
+  modalityId  String
+  teamAId     String
+  teamBId     String
+  winnerId    String? // equipe vencedora
+  round       Int? // fase ou rodada (ex: 1, 2, semifinal)
+  scheduledAt DateTime? // data e hora agendada
+  startTime   DateTime?
+  endTime     DateTime?
+  status      MatchStatus @default(SCHEDULED)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  tenant   Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  event    Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  modality Modality     @relation(fields: [modalityId], references: [id], onDelete: Cascade)
+  teamA    Team         @relation("TeamA", fields: [teamAId], references: [id])
+  teamB    Team         @relation("TeamB", fields: [teamBId], references: [id])
+  winner   Team?        @relation("Winner", fields: [winnerId], references: [id])
+  result   MatchResult?
+
+  @@index([tenantId])
+  @@index([eventId])
+  @@index([modalityId])
+  @@index([teamAId])
+  @@index([teamBId])
+  @@map("matches")
+}
+
+// ============================================
+// MATCH RESULT (Resultado da Partida)
+// ============================================
+
+model MatchResult {
+  id         String   @id @default(cuid())
+  tenantId   String
+  matchId    String   @unique
+  teamAScore Int      @default(0)
+  teamBScore Int      @default(0)
+  extraTime  Boolean  @default(false)
+  penalties  Boolean  @default(false)
+  notes      String?  @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  match  Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("match_results")
 }
