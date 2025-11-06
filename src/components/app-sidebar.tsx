@@ -33,6 +33,14 @@ const tenant = {
   primaryColor: "#1E40AF",
 };
 
+// TODO: Obter user do contexto/sessão quando Auth estiver implementado
+const user = {
+  name: "Usuário Pegasus",
+  image: null as string | null,
+  email: "usuario@pegasus.app",
+  role: "Athlete",
+};
+
 // Estrutura de navegação com grupos colapsáveis
 const navMain = [
   {
@@ -91,7 +99,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar {...props} collapsible="icon">
       <SidebarHeader>
-        <VersionSwitcher tenant={tenant} />
+        <VersionSwitcher tenant={tenant} user={user} />
         <SearchForm />
       </SidebarHeader>
       <SidebarContent className="gap-0">

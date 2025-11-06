@@ -23,11 +23,19 @@ interface TenantInfo {
   primaryColor?: string;
 }
 
-interface VersionSwitcherProps {
-  tenant: TenantInfo;
+interface UserInfo {
+  name?: string | null;
+  image?: string | null;
+  email: string;
+  role?: string | null;
 }
 
-export function VersionSwitcher({ tenant }: VersionSwitcherProps) {
+interface VersionSwitcherProps {
+  tenant: TenantInfo;
+  user?: UserInfo | null;
+}
+
+export function VersionSwitcher({ tenant, user }: VersionSwitcherProps) {
   const [selectedTenant, setSelectedTenant] = React.useState(tenant.name);
   const { isMobile, openMobile } = useSidebar();
 
@@ -66,9 +74,13 @@ export function VersionSwitcher({ tenant }: VersionSwitcherProps) {
                   </span>
                 )}
               </div>
-              <div className="flex flex-col gap-0.5 leading-none">
-                <span className="font-medium">{tenant.name}</span>
-                <span className="text-xs">Tenant</span>
+              <div className="flex min-w-0 flex-col gap-0.5 leading-none">
+                <span className="truncate font-medium">
+                  {user?.name || user?.email?.split("@")[0] || "Usuário"}
+                </span>
+                <span className="text-muted-foreground truncate text-xs">
+                  {user?.role || "Athlete"}
+                </span>
               </div>
               <ChevronsUpDown className="ml-auto" />
             </SidebarMenuButton>

@@ -29,6 +29,7 @@ interface AppLayoutProps {
 }
 
 // TODO: Obter user do contexto/sessão quando Auth estiver implementado
+
 const user: {
   name?: string | null;
   image?: string | null;
@@ -53,12 +54,19 @@ function AppHeader() {
   };
 
   return (
-    <header className="bg-background sticky top-0 z-9999 flex h-16 shrink-0 items-center gap-2 border-b px-4">
+    <header
+      className="bg-background/95 sticky top-0 z-9999 flex h-16 shrink-0 items-center gap-2 border-b px-4 shadow-sm backdrop-blur-md"
+      aria-label="Cabeçalho principal do dashboard"
+    >
       <SidebarTrigger
         className={cn("-ml-1", isMobile && openMobile && "relative z-10000")}
+        aria-label="Alternar menu lateral"
       />
-      <Separator orientation="vertical" className="mr-2 h-4" />
-      <Breadcrumb>
+      {/* Branding removido do header — mantido no VersionSwitcher da sidebar */}
+      <Separator orientation="vertical" className="mr-2 hidden h-4 md:block" />
+
+      {/* Breadcrumbs */}
+      <Breadcrumb aria-label="Navegação estrutural">
         <BreadcrumbList>
           {breadcrumbs.map((crumb, index) => {
             const isLast = index === breadcrumbs.length - 1;
@@ -71,10 +79,17 @@ function AppHeader() {
                   className={index === 0 ? "hidden md:block" : ""}
                 >
                   {isLast ? (
-                    <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                    <BreadcrumbPage aria-current="page">
+                      {crumb.label}
+                    </BreadcrumbPage>
                   ) : (
                     <BreadcrumbLink asChild>
-                      <Link href={crumb.href || "#"}>{crumb.label}</Link>
+                      <Link
+                        href={crumb.href || "#"}
+                        title={`Ir para ${crumb.label}`}
+                      >
+                        {crumb.label}
+                      </Link>
                     </BreadcrumbLink>
                   )}
                 </BreadcrumbItem>
@@ -83,6 +98,8 @@ function AppHeader() {
           })}
         </BreadcrumbList>
       </Breadcrumb>
+
+      {/* User Menu */}
       <div className="ml-auto flex items-center gap-4">
         {user ? (
           <div className="flex items-center gap-3">
@@ -92,7 +109,11 @@ function AppHeader() {
               </p>
               <p className="text-muted-foreground text-xs">{user.email}</p>
             </div>
-            <Avatar className="size-8">
+            <Avatar
+              className="size-8"
+              role="img"
+              aria-label="Avatar do usuário"
+            >
               <AvatarImage
                 src={user.image || undefined}
                 alt={user.name || "Avatar do usuário"}
@@ -106,8 +127,9 @@ function AppHeader() {
         ) : (
           <Link
             href="/login"
-            className="text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
+            className="text-muted-foreground hover:text-foreground focus:ring-primary rounded-sm text-sm font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
             title="Fazer login"
+            aria-label="Fazer login na aplicação"
           >
             Entrar
           </Link>
@@ -120,6 +142,15 @@ function AppHeader() {
 export default function AppLayout({ children }: AppLayoutProps) {
   return (
     <SidebarProvider>
+      {/* Skip Link para navegação por teclado */}
+      <a
+        href="#main-content"
+        className="bg-primary text-primary-foreground sr-only z-10001 rounded-md px-4 py-2 font-medium transition-all focus:not-sr-only focus:absolute focus:top-4 focus:left-4"
+        title="Pular para o conteúdo principal"
+        aria-label="Pular para o conteúdo principal"
+      >
+        Pular para o conteúdo principal
+      </a>
       <AppSidebar />
       <SidebarInset>
         <AppHeader />
