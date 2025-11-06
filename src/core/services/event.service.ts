@@ -95,3 +95,66 @@ export async function getEvent(eventId: string): Promise<EventResponse> {
 
   return response.json();
 }
+
+/**
+ * Cria um novo evento
+ */
+export async function createEvent(
+  data: CreateEventInput
+): Promise<EventResponse> {
+  const response = await fetch("/api/events", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || "Erro ao criar evento");
+  }
+
+  return response.json();
+}
+
+/**
+ * Atualiza um evento existente
+ */
+export async function updateEvent(
+  eventId: string,
+  data: UpdateEventInput
+): Promise<EventResponse> {
+  const response = await fetch(`/api/events/${eventId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || "Erro ao atualizar evento");
+  }
+
+  return response.json();
+}
+
+/**
+ * Tipos para criação e atualização
+ */
+export type CreateEventInput = {
+  name: string;
+  description?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  location?: string | null;
+  isPublic?: boolean;
+  status?: "DRAFT" | "ACTIVE" | "FINISHED" | "CANCELED";
+  bannerUrl?: string | null;
+};
+
+export type UpdateEventInput = Partial<CreateEventInput>;

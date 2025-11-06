@@ -1,15 +1,24 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 
 import type {
+  CreateEventInput,
   Event,
   EventResponse,
   EventsListParams,
   EventsListResponse,
+  UpdateEventInput,
 } from "@/core/services/event.service";
-import { getEvent, getEvents } from "@/core/services/event.service";
+import {
+  createEvent,
+  getEvent,
+  getEvents,
+  updateEvent,
+} from "@/core/services/event.service";
 
 /**
  * Hook para listar eventos (torneios)
@@ -81,4 +90,59 @@ export function useEventData(eventId: string): {
     isError,
     error: error || null,
   };
+}
+
+/**
+ * Hook para criar um novo evento
+ * Usa useMutation do TanStack Query
+ */
+export function useCreateEvent() {
+  const { data: session } = useSession();
+  const tenantId = (session?.user as { tenantId?: string })?.tenantId;
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  return useMutation<EventResponse, Error, CreateEventInput>({
+    mutationFn: createEvent,
+    onSuccess: (data) => {
+      // Invalidar queries de eventos para refetch
+      queryClient.invalidateQueries({
+        queryKey: ["events", tenantId],
+      });
+      toast.success("Evento criado com sucesso!");
+      router.push(`/dashboard/events/${data.event.id}`);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erro ao criar evento");
+    },
+  });
+}
+
+/**
+ * Hook para atualizar um evento existente
+ * Usa useMutation do TanStack Query
+ */
+export function useUpdateEvent(eventId: string) {
+  const { data: session } = useSession();
+  const tenantId = (session?.user as { tenantId?: string })?.tenantId;
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  return useMutation<EventResponse, Error, UpdateEventInput>({
+    mutationFn: (data) => updateEvent(eventId, data),
+    onSuccess: (data) => {
+      // Invalidar queries de eventos e do evento específico
+      queryClient.invalidateQueries({
+        queryKey: ["events", tenantId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["events", tenantId, eventId],
+      });
+      toast.success("Evento atualizado com sucesso!");
+      router.push(`/dashboard/events/${data.event.id}`);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erro ao atualizar evento");
+    },
+  });
 }
