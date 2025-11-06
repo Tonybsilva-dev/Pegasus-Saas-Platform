@@ -27,6 +27,25 @@ enum TenantPlan {
   ENTERPRISE // Plano corporativo
 }
 
+// Tipos para eventos/modalidades/times
+enum ModalityType {
+  TEAM // Esportes coletivos: futebol, vôlei etc.
+  SOLO // Esportes individuais: tênis, corrida, xadrez etc.
+}
+
+enum EventStatus {
+  DRAFT
+  ACTIVE
+  FINISHED
+  CANCELED
+}
+
+enum TeamRole {
+  CAPTAIN
+  PLAYER
+  COACH
+}
+
 // ============================================
 // TENANT (Multi-tenant Architecture)
 // ============================================
@@ -52,9 +71,12 @@ model Tenant {
   trialEndsAt            DateTime?
 
   // Relations
-  users    User[]
-  events   Event[]
-  sessions Session[]
+  users       User[]
+  events      Event[]
+  sessions    Session[]
+  modalities  Modality[]
+  teams       Team[]
+  teamMembers TeamMember[]
 
   @@index([slug])
   @@index([domain])
@@ -79,10 +101,11 @@ model User {
   updatedAt      DateTime  @updatedAt
 
   // Relations
-  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant        Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   sessions      Session[]
   accounts      Account[]
-  eventsCreated Event[]   @relation("UserEventsCreated")
+  eventsCreated Event[]      @relation("UserEventsCreated")
+  teamMembers   TeamMember[]
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -144,17 +167,94 @@ model Account {
 // ============================================
 
 model Event {
-  id        String   @id @default(cuid())
-  tenantId  String
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String      @id @default(cuid())
+  tenantId    String
+  name        String
+  description String?
+  startDate   DateTime?
+  endDate     DateTime?
+  location    String?
+  isPublic    Boolean     @default(false)
+  status      EventStatus @default(DRAFT)
+  bannerUrl   String?
+  createdById String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
   // Relations
-  tenant      Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  createdBy   User?   @relation("UserEventsCreated", fields: [createdById], references: [id])
-  createdById String?
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy  User?      @relation("UserEventsCreated", fields: [createdById], references: [id])
+  modalities Modality[]
 
   @@index([tenantId])
   @@map("events")
+}
+
+// ============================================
+// MODALITY
+// ============================================
+
+model Modality {
+  id          String       @id @default(cuid())
+  tenantId    String
+  eventId     String
+  name        String
+  description String?
+  type        ModalityType @default(TEAM)
+  maxPlayers  Int?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  event  Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  teams  Team[]
+
+  @@unique([tenantId, eventId, name])
+  @@index([tenantId])
+  @@index([eventId])
+  @@map("modalities")
+}
+
+// ============================================
+// TEAM & TEAM MEMBER (N-N User <-> Team)
+// ============================================
+
+model Team {
+  id         String   @id @default(cuid())
+  tenantId   String
+  modalityId String
+  name       String
+  logoUrl    String?
+  color      String   @default("#1E40AF")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  tenant   Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  modality Modality     @relation(fields: [modalityId], references: [id], onDelete: Cascade)
+  members  TeamMember[]
+
+  @@unique([tenantId, modalityId, name])
+  @@index([tenantId])
+  @@index([modalityId])
+  @@map("teams")
+}
+
+model TeamMember {
+  id       String   @id @default(cuid())
+  tenantId String
+  userId   String
+  teamId   String
+  role     TeamRole @default(PLAYER)
+  joinedAt DateTime @default(now())
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId, teamId])
+  @@index([tenantId])
+  @@map("team_members")
 }
