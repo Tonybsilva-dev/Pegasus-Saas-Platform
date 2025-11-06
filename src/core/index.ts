@@ -6,3 +6,4 @@ export {
   type LogContext,
   logger,
 } from "./logger";
+export { connectDatabase, disconnectDatabase, prisma } from "./prisma";
