@@ -56,7 +56,8 @@ export async function PUT(
     }
 
     // 4. Obter ID da partida
-    const { id } = await params();
+    const resolvedParams = await params;
+    const { id } = resolvedParams;
 
     // 5. Buscar partida com isolamento de tenant
     const match = await prisma.match.findFirst({
@@ -85,7 +86,7 @@ export async function PUT(
         {
           message: "Dados inválidos",
           error: "VALIDATION_ERROR",
-          details: validationResult.error.errors,
+          details: validationResult.error.issues,
         },
         { status: 400 }
       );

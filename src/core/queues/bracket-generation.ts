@@ -56,19 +56,23 @@ export function getBracketGenerationQueue(): Queue | null {
       );
     });
 
-    bracketGenerationQueue.on("active", (job) => {
+    // Event listeners do BullMQ - tipos não estão totalmente expostos na definição
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    bracketGenerationQueue.on("active" as any, (job: any) => {
       console.log(
-        `[BracketGenerationQueue] Job ${job.id} iniciado: ${job.name}`
+        `[BracketGenerationQueue] Job ${job?.id} iniciado: ${job?.name}`
       );
     });
 
-    bracketGenerationQueue.on("completed", (job) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    bracketGenerationQueue.on("completed" as any, (job: any) => {
       console.log(
-        `[BracketGenerationQueue] Job ${job.id} concluído: ${job.name}`
+        `[BracketGenerationQueue] Job ${job?.id} concluído: ${job?.name}`
       );
     });
 
-    bracketGenerationQueue.on("failed", (job, err) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    bracketGenerationQueue.on("failed" as any, (job: any, err: any) => {
       console.error(
         `[BracketGenerationQueue] Job ${job?.id} falhou: ${job?.name}`,
         err
@@ -116,7 +120,7 @@ export async function addBracketGenerationJob(
     }
   );
 
-  return job.id;
+  return job.id ?? null;
 }
 
 /**

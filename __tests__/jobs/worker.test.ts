@@ -15,7 +15,7 @@ const mockJob = {
 
 const mockOn = vi.fn();
 const mockClose = vi.fn(async () => {});
-const mockWorker = vi.fn((queueName, processor) => {
+const mockWorker = vi.fn((_queueName, processor) => {
   // Simular processamento de job
   if (processor && typeof processor === "function") {
     // Chamar o processor com o job mockado
@@ -76,6 +76,7 @@ describe("worker", () => {
   });
 
   it("deve retornar null quando Redis não está disponível", async () => {
+    // @ts-expect-error - Mock pode retornar null para simular Redis não disponível
     mockGetRedisClient.mockReturnValueOnce(null);
 
     const { createWorker } = await import("../../src/jobs/worker");

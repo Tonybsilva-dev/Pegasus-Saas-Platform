@@ -67,6 +67,7 @@ describe("bracket-generation queue", () => {
   });
 
   it("deve retornar null quando Redis não está disponível", async () => {
+    // @ts-expect-error - Mock pode retornar null para simular Redis não disponível
     mockGetRedisClient.mockReturnValueOnce(null);
 
     const { getBracketGenerationQueue } = await import(
@@ -143,6 +144,7 @@ describe("bracket-generation queue", () => {
   });
 
   it("deve retornar null ao adicionar job quando Redis não está disponível", async () => {
+    // @ts-expect-error - Mock pode retornar null para simular Redis não disponível
     mockGetRedisClient.mockReturnValueOnce(null);
 
     const { addBracketGenerationJob } = await import(
