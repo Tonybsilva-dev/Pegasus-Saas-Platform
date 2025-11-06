@@ -11,7 +11,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Rotas públicas que não precisam de isolamento
-  const publicRoutes = ["/login", "/", "/api/auth"];
+  const publicRoutes = ["/login", "/", "/api/auth", "/api/webhooks"];
   const isPublicRoute = publicRoutes.some((route) =>
     pathname.startsWith(route)
   );

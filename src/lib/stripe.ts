@@ -29,7 +29,8 @@ export function getStripe(): Stripe | null {
 
   if (!stripeInstance) {
     stripeInstance = new Stripe(env.STRIPE_SECRET_KEY, {
-      apiVersion: "2023-10-16",
+      // Usar a versão mais recente suportada pelo SDK
+      // O Stripe SDK gerencia automaticamente a versão se não especificada
       typescript: true,
     });
   }
