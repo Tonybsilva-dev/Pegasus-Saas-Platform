@@ -45,6 +45,7 @@
         <li><a href="#configuração-de-variáveis-de-ambiente">Configuração de Variáveis de Ambiente</a></li>
         <li><a href="#configuração-do-banco-de-dados">Configuração do Banco de Dados</a></li>
         <li><a href="#configuração-do-redis">Configuração do Redis</a></li>
+        <li><a href="#configuração-do-stripe">Configuração do Stripe</a></li>
       </ul>
     </li>
     <li><a href="#usage">Usage</a></li>
@@ -77,6 +78,7 @@ Pegasus Platform é uma plataforma multi-tenant completa para gerenciamento de e
 - **BullMQ** - Processamento de jobs em background
 - **Redis** - Cache e filas de jobs
 - **Resend** - Envio de emails transacionais
+- **Stripe** - Gestão de planos e assinaturas
 - **Vitest** - Framework de testes
 - **ESLint + Prettier** - Qualidade de código
 
@@ -158,6 +160,11 @@ MICROSOFT_CLIENT_SECRET="your-microsoft-client-secret"
 # Redis (opcional, necessário para BullMQ)
 REDIS_URL="redis://localhost:6379"
 
+# Billing (Stripe - opcional)
+STRIPE_SECRET_KEY="sk_test_..."
+STRIPE_PUBLIC_KEY="pk_test_..."
+STRIPE_WEBHOOK_SECRET="whsec_..."
+
 # Emails (Resend - opcional)
 RESEND_API_KEY="your-resend-api-key"
 RESEND_FROM="no-reply@yourdomain.com"
@@ -207,6 +214,79 @@ Se usar Redis com senha, atualize a `REDIS_URL` no `.env`:
 ```env
 REDIS_URL="redis://:redis@localhost:6379"
 ```
+
+### Configuração do Stripe
+
+A integração com Stripe permite gerenciar planos de assinatura e processar pagamentos para tenants.
+
+#### 1. Criar Conta e Obter Chaves
+
+1. Acesse [Stripe Dashboard](https://dashboard.stripe.com/)
+2. Obtenha suas chaves de API (Test Mode para desenvolvimento):
+   - `STRIPE_SECRET_KEY` (começa com `sk_test_` ou `sk_live_`)
+   - `STRIPE_PUBLIC_KEY` (começa com `pk_test_` ou `pk_live_`)
+3. Adicione as chaves ao arquivo `.env`
+
+#### 2. Configurar Produtos e Planos
+
+No dashboard do Stripe, crie os seguintes produtos:
+
+**Produtos Recomendados:**
+
+| Produto            | ID Sugerido          | Tipo         | Descrição                            |
+| ------------------ | -------------------- | ------------ | ------------------------------------ |
+| Pegasus Free       | `pegasus_free`       | Free         | Acesso básico, limitado a 1 evento   |
+| Pegasus Pro        | `pegasus_pro`        | Subscription | Até 10 eventos, prioridade suporte   |
+| Pegasus Enterprise | `pegasus_enterprise` | Subscription | Eventos ilimitados, suporte dedicado |
+
+**Preços Recomendados:**
+
+| Produto    | Recorrência | Valor   | ID Exemplo                         |
+| ---------- | ----------- | ------- | ---------------------------------- |
+| Pro        | Mensal      | R$ 149  | `price_pegasus_pro_monthly`        |
+| Pro        | Anual       | R$ 1490 | `price_pegasus_pro_annual`         |
+| Enterprise | Mensal      | R$ 499  | `price_pegasus_enterprise_monthly` |
+
+#### 3. Validar Configuração
+
+Execute o script de sincronização para listar produtos e preços:
+
+```bash
+npx tsx scripts/stripe-sync.ts
+```
+
+Execute o script de teste para criar um cliente e assinatura de teste:
+
+```bash
+# Opcional: defina um price ID de teste
+export STRIPE_TEST_PRICE_ID="price_pegasus_pro_monthly"
+
+npx tsx scripts/stripe-test.ts
+```
+
+#### 4. Webhooks (Desenvolvimento)
+
+Para testar webhooks localmente:
+
+```bash
+# Instalar Stripe CLI
+brew install stripe/stripe-cli/stripe
+
+# Login
+stripe login
+
+# Encaminhar webhooks para localhost
+stripe listen --forward-to localhost:3000/api/webhooks/stripe
+```
+
+O Stripe CLI fornecerá um `STRIPE_WEBHOOK_SECRET` que você deve adicionar ao `.env`.
+
+#### Boas Práticas
+
+- **Segurança**: Nunca exponha `STRIPE_SECRET_KEY` no cliente. Use rotas `/api/billing/...` seguras
+- **Ambientes**: Use chaves diferentes para test (`sk_test_`) e produção (`sk_live_`)
+- **Webhooks**: Configure `/api/webhooks/stripe` para sincronizar eventos automaticamente (Task futura)
+- **Singleton**: O cliente Stripe é um singleton em `src/lib/stripe.ts` - não inicialize dentro de handlers
 
 <!-- USAGE -->
 
@@ -387,11 +467,12 @@ Veja os [issues abertos](https://github.com/your-username/pegasus-platform/issue
 - [x] Worker para Geração de Chaves
 - [x] Layout Base do Dashboard
 - [x] Integração Resend para Emails
+- [x] Integração com Stripe (SDK, produtos, scripts)
 - [ ] Geração de Chaves de Torneio
 - [ ] Sistema de Rankings
 - [ ] Badges e Conquistas
 - [ ] Dashboard de Analytics
-- [ ] Integração com Billing (Stripe/LemonSqueezy)
+- [ ] Webhook do Stripe para sincronização automática
 - [ ] Observability (Sentry, Loki, Grafana)
 - [ ] Docker Compose
 - [ ] CI/CD
