@@ -21,6 +21,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { QueryProvider } from "@/core/providers/query.provider";
 import { useAuthSync } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { generateBreadcrumbs } from "@/lib/utils/breadcrumbs";
@@ -147,30 +148,32 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <SessionProvider>
-      <AuthSync>
-        <SidebarProvider>
-          {/* Skip Link para navegação por teclado */}
-          <a
-            href="#main-content"
-            className="bg-primary text-primary-foreground sr-only z-10001 rounded-md px-4 py-2 font-medium transition-all focus:not-sr-only focus:absolute focus:top-4 focus:left-4"
-            title="Pular para o conteúdo principal"
-            aria-label="Pular para o conteúdo principal"
-          >
-            Pular para o conteúdo principal
-          </a>
-          <AppSidebar />
-          <SidebarInset>
-            <AppHeader />
-            <main
-              id="main-content"
-              className="bg-background flex flex-1 flex-col gap-4 p-4"
-              aria-label="Conteúdo principal da página"
+      <QueryProvider>
+        <AuthSync>
+          <SidebarProvider>
+            {/* Skip Link para navegação por teclado */}
+            <a
+              href="#main-content"
+              className="bg-primary text-primary-foreground sr-only z-10001 rounded-md px-4 py-2 font-medium transition-all focus:not-sr-only focus:absolute focus:top-4 focus:left-4"
+              title="Pular para o conteúdo principal"
+              aria-label="Pular para o conteúdo principal"
             >
-              {children}
-            </main>
-          </SidebarInset>
-        </SidebarProvider>
-      </AuthSync>
+              Pular para o conteúdo principal
+            </a>
+            <AppSidebar />
+            <SidebarInset>
+              <AppHeader />
+              <main
+                id="main-content"
+                className="bg-background flex flex-1 flex-col gap-4 p-4"
+                aria-label="Conteúdo principal da página"
+              >
+                {children}
+              </main>
+            </SidebarInset>
+          </SidebarProvider>
+        </AuthSync>
+      </QueryProvider>
     </SessionProvider>
   );
 }
