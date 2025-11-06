@@ -1,0 +1,23 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copiar arquivos de dependências
+COPY package*.json ./
+COPY prisma ./prisma
+
+# Instalar dependências de produção
+RUN npm ci --only=production
+
+# Gerar Prisma Client
+RUN npx prisma generate
+
+# Copiar código compilado
+COPY dist ./dist
+
+# Variáveis de ambiente padrão
+ENV NODE_ENV=production
+
+# Comando para executar o worker
+CMD ["node", "dist/src/jobs/worker.js"]
+

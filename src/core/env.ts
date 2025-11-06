@@ -52,6 +52,9 @@ const envSchema = z.object({
   AWS_S3_BUCKET: z.string().optional(),
   CLOUDFLARE_ACCOUNT_ID: z.string().optional(),
   CLOUDFLARE_API_TOKEN: z.string().optional(),
+
+  // Redis (opcional, necessário para BullMQ)
+  REDIS_URL: z.string().url("REDIS_URL deve ser uma URL válida").optional(),
 });
 
 /**
