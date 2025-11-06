@@ -62,11 +62,9 @@ function AppHeader() {
         className={cn("-ml-1", isMobile && openMobile && "relative z-10000")}
         aria-label="Alternar menu lateral"
       />
-      {/* Branding removido do header — mantido no VersionSwitcher da sidebar */}
-      <Separator orientation="vertical" className="mr-2 hidden h-4 md:block" />
 
       {/* Breadcrumbs */}
-      <Breadcrumb aria-label="Navegação estrutural">
+      <Breadcrumb aria-label="Navegação estrutural" className="ml-2">
         <BreadcrumbList>
           {breadcrumbs.map((crumb, index) => {
             const isLast = index === breadcrumbs.length - 1;
