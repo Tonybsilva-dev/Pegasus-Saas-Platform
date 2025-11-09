@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import * as React from "react";
 
+import { useSession } from "@/auth/client";
 import { SearchForm } from "@/components/search-form";
 import {
   Collapsible,
@@ -25,21 +26,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { VersionSwitcher } from "@/components/version-switcher";
-
-// TODO: Obter tenant do contexto/sessão quando Auth estiver implementado
-const tenant = {
-  name: "Pegasus",
-  logoUrl: null,
-  primaryColor: "#1E40AF",
-};
-
-// TODO: Obter user do contexto/sessão quando Auth estiver implementado
-const user = {
-  name: "Usuário Pegasus",
-  image: null as string | null,
-  email: "usuario@pegasus.app",
-  role: "Athlete",
-};
+import { useTenantData } from "@/hooks/use-tenant";
 
 // Estrutura de navegação com grupos colapsáveis
 const navMain = [
@@ -95,11 +82,57 @@ const navMain = [
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
+  const { data: session, isPending: sessionIsPending } = useSession();
+  const { tenant: tenantData } = useTenantData();
+
+  // Debug em desenvolvimento
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === "development") {
+      console.log("[AppSidebar] Estado da sessão:", {
+        isPending: sessionIsPending,
+        hasSession: !!session,
+        hasUser: !!session?.user,
+        userEmail: session?.user?.email,
+        userId: session?.user?.id,
+        fullSession: session,
+      });
+    }
+  }, [session, sessionIsPending]);
+
+  // Obter dados do usuário da sessão
+  const user = session?.user
+    ? {
+        name: session.user.name ?? null,
+        image: session.user.image ?? null,
+        email: session.user.email ?? "",
+        role: (session.user as { role?: string })?.role ?? "ATHLETE",
+      }
+    : null;
+
+  // Obter dados do tenant (com fallback para valores padrão)
+  const tenant = tenantData
+    ? {
+        name: tenantData.name,
+        logoUrl: tenantData.logoUrl,
+        primaryColor: tenantData.primaryColor,
+      }
+    : {
+        name: "Pegasus",
+        logoUrl: null,
+        primaryColor: "#1E40AF",
+      };
+
+  // Mostrar VersionSwitcher se:
+  // - Sessão está carregada (não pending) E usuário existe
+  // - Não precisa esperar o tenant carregar (mostra com fallback se necessário)
+  const shouldShowVersionSwitcher = !sessionIsPending && !!user;
 
   return (
     <Sidebar {...props} collapsible="icon">
       <SidebarHeader>
-        <VersionSwitcher tenant={tenant} user={user} />
+        {shouldShowVersionSwitcher && (
+          <VersionSwitcher tenant={tenant} user={user} />
+        )}
         <SearchForm />
       </SidebarHeader>
       <SidebarContent className="gap-0">

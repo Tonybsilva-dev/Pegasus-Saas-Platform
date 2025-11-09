@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 
-import { env } from "../env";
+import { env } from "@/core/env";
 
 const resend = new Resend(env.RESEND_API_KEY);
 const DEFAULT_FROM = env.RESEND_FROM || "no-reply@pegasus.local";
@@ -15,7 +15,7 @@ export async function sendInvitationEmail({ to, token }: SendInvitationParams) {
     throw new Error("RESEND_API_KEY não configurada");
   }
 
-  const inviteUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/invite?token=${encodeURIComponent(
+  const inviteUrl = `${env.NEXTAUTH_URL}/invite?token=${encodeURIComponent(
     token
   )}`;
 

@@ -1,17 +1,16 @@
 import { NextResponse } from "next/server";
 
-import { auth } from "@/auth";
+import { getSession } from "@/lib/auth-helpers";
 
 /**
- * Endpoint de teste para verificar a sessão atual e os dados customizados
- * (tenantId, role) no token JWT.
+ * Endpoint para verificar a sessão atual do Better Auth
  *
  * GET /api/auth/session
  * Retorna a sessão completa do usuário autenticado ou 401 se não autenticado
  */
 export async function GET() {
   try {
-    const session = await auth();
+    const session = await getSession();
 
     if (!session) {
       return NextResponse.json(
@@ -24,14 +23,14 @@ export async function GET() {
       authenticated: true,
       session: {
         user: {
-          id: session.user?.id,
-          name: session.user?.name,
-          email: session.user?.email,
-          image: session.user?.image,
-          tenantId: session.user?.tenantId,
-          role: session.user?.role,
+          id: session.user.id,
+          name: session.user.name,
+          email: session.user.email,
+          image: session.user.image,
+          tenantId: session.user.tenantId,
+          role: session.user.role,
         },
-        expires: session.expires,
+        expires: session.expiresAt,
       },
     });
   } catch (error) {

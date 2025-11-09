@@ -1,8 +1,8 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { auth } from "@/auth";
 import { prisma } from "@/core/prisma";
+import { getSession } from "@/lib/auth-helpers";
 import { createEventSchema } from "@/validations/event";
 
 /**
@@ -14,7 +14,7 @@ import { createEventSchema } from "@/validations/event";
 export async function POST(request: NextRequest) {
   try {
     // 1. Verificar autenticação
-    const session = await auth();
+    const session = await getSession(request);
 
     if (!session?.user) {
       return NextResponse.json(
@@ -23,8 +23,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. Verificar tenantId
-    const tenantId = (session.user as { tenantId?: string })?.tenantId;
+    // 2. Verificar tenantId - buscar do banco se não estiver na sessão
+    let tenantId = (session.user as { tenantId?: string })?.tenantId;
+    let userRole = (session.user as { role?: string })?.role;
+
+    if (!tenantId || !userRole) {
+      // Buscar do banco de dados
+      const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { tenantId: true, role: true },
+      });
+      tenantId = dbUser?.tenantId ?? undefined;
+      userRole = dbUser?.role ?? undefined;
+    }
 
     if (!tenantId) {
       return NextResponse.json(
@@ -34,7 +45,6 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Verificar role (apenas ORGANIZER, ADMIN ou OWNER podem criar)
-    const userRole = (session.user as { role?: string })?.role;
 
     if (
       userRole !== "ORGANIZER" &&
@@ -123,7 +133,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     // 1. Verificar autenticação
-    const session = await auth();
+    const session = await getSession(request);
 
     if (!session?.user) {
       return NextResponse.json(
@@ -132,8 +142,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 2. Verificar tenantId
-    const tenantId = (session.user as { tenantId?: string })?.tenantId;
+    // 2. Verificar tenantId - buscar do banco se não estiver na sessão
+    let tenantId = (session.user as { tenantId?: string })?.tenantId;
+
+    if (!tenantId) {
+      // Buscar do banco de dados
+      const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { tenantId: true },
+      });
+      tenantId = dbUser?.tenantId ?? undefined;
+    }
 
     if (!tenantId) {
       return NextResponse.json(

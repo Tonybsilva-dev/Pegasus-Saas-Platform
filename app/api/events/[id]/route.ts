@@ -1,8 +1,8 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { auth } from "@/auth";
 import { prisma } from "@/core/prisma";
+import { getSession } from "@/lib/auth-helpers";
 import { updateEventSchema } from "@/validations/event";
 
 /**
@@ -18,7 +18,7 @@ export async function GET(
 ) {
   try {
     // 1. Verificar autenticação
-    const session = await auth();
+    const session = await getSession(_request);
 
     if (!session?.user) {
       return NextResponse.json(
@@ -27,8 +27,17 @@ export async function GET(
       );
     }
 
-    // 2. Verificar tenantId
-    const tenantId = (session.user as { tenantId?: string })?.tenantId;
+    // 2. Verificar tenantId - buscar do banco se não estiver na sessão
+    let tenantId = (session.user as { tenantId?: string })?.tenantId;
+
+    if (!tenantId) {
+      // Buscar do banco de dados
+      const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { tenantId: true },
+      });
+      tenantId = dbUser?.tenantId ?? undefined;
+    }
 
     if (!tenantId) {
       return NextResponse.json(
@@ -102,7 +111,7 @@ export async function PUT(
 ) {
   try {
     // 1. Verificar autenticação
-    const session = await auth();
+    const session = await getSession(request);
 
     if (!session?.user) {
       return NextResponse.json(
@@ -111,8 +120,17 @@ export async function PUT(
       );
     }
 
-    // 2. Verificar tenantId
-    const tenantId = (session.user as { tenantId?: string })?.tenantId;
+    // 2. Verificar tenantId - buscar do banco se não estiver na sessão
+    let tenantId = (session.user as { tenantId?: string })?.tenantId;
+
+    if (!tenantId) {
+      // Buscar do banco de dados
+      const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { tenantId: true },
+      });
+      tenantId = dbUser?.tenantId ?? undefined;
+    }
 
     if (!tenantId) {
       return NextResponse.json(
@@ -262,7 +280,7 @@ export async function DELETE(
 ) {
   try {
     // 1. Verificar autenticação
-    const session = await auth();
+    const session = await getSession(_request);
 
     if (!session?.user) {
       return NextResponse.json(
@@ -271,8 +289,17 @@ export async function DELETE(
       );
     }
 
-    // 2. Verificar tenantId
-    const tenantId = (session.user as { tenantId?: string })?.tenantId;
+    // 2. Verificar tenantId - buscar do banco se não estiver na sessão
+    let tenantId = (session.user as { tenantId?: string })?.tenantId;
+
+    if (!tenantId) {
+      // Buscar do banco de dados
+      const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { tenantId: true },
+      });
+      tenantId = dbUser?.tenantId ?? undefined;
+    }
 
     if (!tenantId) {
       return NextResponse.json(

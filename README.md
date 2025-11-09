@@ -49,6 +49,18 @@
       </ul>
     </li>
     <li><a href="#usage">Usage</a></li>
+    <li>
+      <a href="#autenticação-e-onboarding">Autenticação e Onboarding</a>
+      <ul>
+        <li><a href="#fluxo-de-autenticação-e-onboarding">Fluxo de Autenticação e Onboarding</a></li>
+        <li><a href="#arquitetura-multi-tenant">Arquitetura Multi-Tenant</a></li>
+        <li><a href="#estados-do-usuário">Estados do Usuário</a></li>
+        <li><a href="#configurações-padrão">Configurações Padrão</a></li>
+        <li><a href="#endpoints-de-onboarding">Endpoints de Onboarding</a></li>
+        <li><a href="#práticas-implementadas">Práticas Implementadas</a></li>
+        <li><a href="#segurança">Segurança</a></li>
+      </ul>
+    </li>
     <li><a href="#executando-o-worker">Executando o Worker</a></li>
     <li><a href="#deploy">Deploy</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
@@ -405,6 +417,233 @@ npm run quality:check
 # Corrigir problemas automaticamente
 npm run quality:fix
 ```
+
+<!-- AUTHENTICATION & ONBOARDING -->
+
+## Autenticação e Onboarding
+
+A plataforma utiliza **NextAuth.js v5** com OAuth (Google, Microsoft) para autenticação e implementa um fluxo de onboarding automático para novos usuários que desejam criar sua própria organização.
+
+### Fluxo de Autenticação e Onboarding
+
+O diagrama abaixo ilustra o fluxo completo desde o login até a criação da organização:
+
+```mermaid
+sequenceDiagram
+    participant User as Usuário
+    participant Login as Página de Login
+    participant OAuth as Google OAuth
+    participant Adapter as Prisma Adapter
+    participant DB as Banco de Dados
+    participant Middleware as Middleware
+    participant Onboarding as Página Onboarding
+    participant API as API /onboarding/create-tenant
+    participant Dashboard as Dashboard
+
+    User->>Login: Acessa /login
+    Login->>OAuth: Clica "Entrar com Google"
+    OAuth->>User: Solicita autorização
+    User->>OAuth: Autoriza acesso
+    OAuth->>Adapter: Callback com dados do usuário
+
+    alt Usuário não existe
+        Adapter->>DB: Cria usuário no tenant "default"
+        Note over Adapter,DB: tenantId = "default"<br/>role = "ATHLETE"<br/>emailVerified = true
+        DB-->>Adapter: Usuário criado
+    else Usuário já existe
+        Adapter->>DB: Busca usuário existente
+        DB-->>Adapter: Retorna usuário
+    end
+
+    Adapter->>DB: Verifica se precisa onboarding
+    Note over Adapter,DB: needsOnboarding = true se:<br/>- tenantId = "default"<br/>- role = "ATHLETE"
+    DB-->>Adapter: needsOnboarding = true/false
+
+    Adapter-->>OAuth: Retorna sessão com needsOnboarding
+    OAuth-->>User: Redireciona para callback
+
+    alt needsOnboarding = true
+        Middleware->>User: Detecta needsOnboarding
+        Middleware->>Onboarding: Redireciona para /onboarding
+        User->>Onboarding: Preenche dados da organização
+        Note over User,Onboarding: Nome da organização<br/>Slug (URL)
+        User->>API: Submete formulário
+        API->>DB: Cria novo tenant
+        Note over API,DB: Cria tenant com:<br/>- trialEndsAt = +7 dias<br/>- plan = "FREE"
+        API->>DB: Atualiza usuário
+        Note over API,DB: Atualiza:<br/>- tenantId = novo tenant<br/>- role = "OWNER"
+        API->>DB: Atualiza todas as sessões
+        API-->>User: Retorna sucesso
+        User->>Dashboard: Redireciona para /dashboard
+    else needsOnboarding = false
+        Middleware->>Dashboard: Redireciona para /dashboard
+    end
+```
+
+### Arquitetura Multi-Tenant
+
+A plataforma implementa isolamento completo de dados por tenant:
+
+```mermaid
+graph TB
+    subgraph "Camada de Autenticação"
+        A[NextAuth.js v5] --> B[PrismaMultiTenantAdapter]
+        B --> C[Detecção de Tenant]
+    end
+
+    subgraph "Camada de Middleware"
+        D[Next.js Middleware] --> E{Usuário Autenticado?}
+        E -->|Não| F[Redireciona para /login]
+        E -->|Sim| G{needsOnboarding?}
+        G -->|Sim| H[Redireciona para /onboarding]
+        G -->|Não| I{tenantId existe?}
+        I -->|Não| F
+        I -->|Sim| J[Adiciona x-tenant-id header]
+    end
+
+    subgraph "Camada de API"
+        K[API Routes] --> L[Extrai tenantId do header]
+        L --> M[Filtra queries Prisma por tenantId]
+        M --> N[Isolamento garantido]
+    end
+
+    subgraph "Banco de Dados"
+        O[(PostgreSQL)] --> P[Tenant Table]
+        O --> Q[User Table]
+        O --> R[Event Table]
+        Q --> S[@@unique tenantId_email]
+        R --> T[@@index tenantId]
+    end
+
+    C --> D
+    J --> K
+    M --> O
+```
+
+### Estados do Usuário
+
+O diagrama abaixo mostra os diferentes estados que um usuário pode ter durante o processo:
+
+```mermaid
+stateDiagram-v2
+    [*] --> NãoAutenticado: Acessa aplicação
+
+    NãoAutenticado --> Autenticando: Clica "Entrar com Google"
+    Autenticando --> NovoUsuario: OAuth sucesso<br/>(email não existe)
+    Autenticando --> UsuarioExistente: OAuth sucesso<br/>(email existe)
+
+    NovoUsuario --> TenantDefault: Criado no tenant "default"<br/>role = ATHLETE
+    TenantDefault --> Onboarding: needsOnboarding = true
+
+    UsuarioExistente --> VerificaTenant: Busca tenant atual
+    VerificaTenant --> Onboarding: tenant = "default"<br/>role = ATHLETE
+    VerificaTenant --> Dashboard: tenant válido<br/>role != ATHLETE
+
+    Onboarding --> CriandoTenant: Submete formulário
+    CriandoTenant --> TenantCriado: Tenant criado<br/>role = OWNER
+    TenantCriado --> Dashboard: Onboarding completo
+
+    Dashboard --> [*]: Logout
+    Onboarding --> [*]: Logout
+```
+
+### Configurações Padrão
+
+Quando um novo usuário é criado via OAuth, as seguintes configurações são aplicadas:
+
+#### Usuário
+
+| Campo            | Valor Padrão           | Descrição                        |
+| ---------------- | ---------------------- | -------------------------------- |
+| `tenantId`       | ID do tenant "default" | Temporário até onboarding        |
+| `email`          | Do provider OAuth      | Email verificado automaticamente |
+| `emailVerified`  | `new Date()`           | OAuth providers verificam email  |
+| `role`           | `"ATHLETE"`            | Role padrão para novos usuários  |
+| `isActive`       | `true`                 | Usuário ativo por padrão         |
+| `hashedPassword` | `null`                 | Usuários OAuth não têm senha     |
+
+#### Tenant (após onboarding)
+
+| Campo            | Valor Padrão           | Descrição                |
+| ---------------- | ---------------------- | ------------------------ |
+| `name`           | Informado pelo usuário | Nome da organização      |
+| `slug`           | Gerado do nome         | URL-friendly identifier  |
+| `plan`           | `"FREE"`               | Plano inicial            |
+| `trialEndsAt`    | `+7 dias`              | Trial gratuito de 7 dias |
+| `isActive`       | `true`                 | Tenant ativo             |
+| `primaryColor`   | `"#1E40AF"`            | Cor primária padrão      |
+| `secondaryColor` | `"#9333EA"`            | Cor secundária padrão    |
+
+### Endpoints de Onboarding
+
+#### `POST /api/onboarding/create-tenant`
+
+Cria um novo tenant e atualiza o usuário para ser o OWNER.
+
+**Autenticação:** Requerida  
+**Autorização:** Apenas usuários com `needsOnboarding = true`  
+**Body:**
+
+```json
+{
+  "name": "Clube de Futebol ABC",
+  "slug": "clube-abc"
+}
+```
+
+**Validações:**
+
+- `name`: 3-100 caracteres
+- `slug`: 3-50 caracteres, apenas letras minúsculas, números e hífens
+- `slug`: Deve ser único (não pode existir outro tenant com o mesmo slug)
+
+**Resposta (201):**
+
+```json
+{
+  "message": "Tenant criado com sucesso",
+  "tenant": {
+    "id": "clx...",
+    "name": "Clube de Futebol ABC",
+    "slug": "clube-abc",
+    "trialEndsAt": "2024-12-13T00:00:00.000Z"
+  }
+}
+```
+
+**Ações Automáticas:**
+
+1. Cria novo tenant com trial de 7 dias
+2. Atualiza usuário: `tenantId` → novo tenant, `role` → `"OWNER"`
+3. Atualiza todas as sessões do usuário para o novo tenant
+4. Invalida sessão JWT para forçar refresh com novos dados
+
+**Erros:**
+
+- `400` - Dados inválidos (validação Zod)
+- `401` - Não autenticado
+- `409` - Slug já está em uso
+- `400` - Onboarding já concluído
+
+### Práticas Implementadas
+
+A plataforma segue as melhores práticas de SaaS multi-tenant:
+
+✅ **Detecção Automática**: Usuários novos são identificados automaticamente  
+✅ **Redirecionamento Inteligente**: Middleware redireciona baseado no estado do usuário  
+✅ **Trial Automático**: 7 dias de trial gratuito para novos tenants  
+✅ **Primeiro Usuário = OWNER**: Usuário que cria o tenant recebe role OWNER  
+✅ **Isolamento Garantido**: Todos os dados são filtrados por `tenantId`  
+✅ **Slug Único**: Validação garante que slugs sejam únicos globalmente  
+✅ **Geração Automática**: Slug é gerado automaticamente a partir do nome
+
+### Segurança
+
+- ✅ Autenticação obrigatória para todas as rotas protegidas
+- ✅ Isolamento de tenant em todas as queries do Prisma
+- ✅ Validação de `needsOnboarding` antes de criar tenant
+- ✅ Verificação de slug único para prevenir conflitos
+- ✅ Atualização automática de sessões após criação de tenant
 
 <!-- API ENDPOINTS -->
 

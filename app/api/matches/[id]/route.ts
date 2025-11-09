@@ -1,8 +1,8 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { auth } from "@/auth";
 import { prisma } from "@/core/prisma";
+import { getSession } from "@/lib/auth-helpers";
 import { updateMatchSchema } from "@/validations/match";
 
 /**
@@ -18,7 +18,7 @@ export async function PUT(
 ) {
   try {
     // 1. Verificar autenticação
-    const session = await auth();
+    const session = await getSession(request);
 
     if (!session?.user) {
       return NextResponse.json(
@@ -27,8 +27,19 @@ export async function PUT(
       );
     }
 
-    // 2. Verificar tenantId
-    const tenantId = (session.user as { tenantId?: string })?.tenantId;
+    // 2. Verificar tenantId - buscar do banco se não estiver na sessão
+    let tenantId = (session.user as { tenantId?: string })?.tenantId;
+    let userRole = (session.user as { role?: string })?.role;
+
+    if (!tenantId || !userRole) {
+      // Buscar do banco de dados
+      const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { tenantId: true, role: true },
+      });
+      tenantId = dbUser?.tenantId ?? undefined;
+      userRole = dbUser?.role ?? undefined;
+    }
 
     if (!tenantId) {
       return NextResponse.json(
@@ -38,7 +49,7 @@ export async function PUT(
     }
 
     // 3. Verificar role (apenas ORGANIZER ou ADMIN podem atualizar)
-    const userRole = (session.user as { role?: string })?.role;
+    // userRole já foi obtido acima
 
     if (
       userRole !== "ORGANIZER" &&

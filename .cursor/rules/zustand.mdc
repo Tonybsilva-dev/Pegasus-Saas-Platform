@@ -1,5 +1,5 @@
 ---
-description: Guidelines for using Zustand for global state management in the Ecoleta project
+description: Guidelines for using Zustand for UI state management (NOT for authentication)
 globs: src/**/*.{ts,tsx}
 alwaysApply: true
 ---
@@ -8,7 +8,17 @@ alwaysApply: true
 
 ## **Visão Geral**
 
-Zustand é o padrão obrigatório para gerenciamento de estado global no Ecoleta. Use Zustand para qualquer estado que precise ser compartilhado entre componentes ou persistido.
+Zustand é usado APENAS para estado de UI e preferências do usuário. **NÃO use Zustand para autenticação** - a autenticação é gerenciada via NextAuth.js + Middleware + Cookies.
+
+## **⚠️ IMPORTANTE: Autenticação**
+
+**NÃO use Zustand para autenticação!** A autenticação é gerenciada via:
+- **NextAuth.js** para sessão e autenticação
+- **Middleware do Next.js** para sincronizar sessão em cookies
+- **Cookies** (`auth.user.*`) para acesso no cliente
+- **`useSession()`** do NextAuth para componentes React
+
+Veja [pegasus-platform.mdc](mdc:.cursor/rules/pegasus-platform.mdc) para detalhes sobre autenticação.
 
 ## **Padrões Obrigatórios**
 
@@ -83,79 +93,62 @@ interface AuthState {
 }
 ```
 
-## **Sincronização com NextAuth**
+## **❌ NÃO usar Zustand para Autenticação**
 
-### **Hook de Sincronização**
+**Autenticação é gerenciada via NextAuth.js + Middleware + Cookies.**
 
 ```typescript
-// ✅ DO: Hook para sincronizar NextAuth com Zustand
-export function useAuthSync() {
-  const { data: session, status } = useSession();
-  const { setUser, setStatus, reset } = useAuthStore();
+// ❌ DON'T: NÃO criar useAuthStore ou useAuthSync
+// A autenticação é gerenciada pelo middleware e cookies
 
-  useEffect(() => {
-    setStatus(status);
-    
-    if (status === "authenticated" && session?.user) {
-      setUser({
-        id: session.user.id,
-        email: session.user.email || "",
-        name: session.user.name || null,
-        image: session.user.image || null,
-        hasSelectedRole: session.user.hasSelectedRole ?? false,
-        userType: session.user.userType as UserType,
-      });
-    } else if (status === "unauthenticated") {
-      reset();
-    }
-  }, [session, status, setUser, setStatus, reset]);
+// ✅ DO: Usar useSession() do NextAuth diretamente
+import { useSession } from "next-auth/react";
+
+export function UserProfile() {
+  const { data: session } = useSession();
+  // session.user contém todos os dados do usuário
 }
 ```
 
-### **Provider Integration**
+Para mais detalhes sobre autenticação, veja [pegasus-platform.mdc](mdc:.cursor/rules/pegasus-platform.mdc).
+
+## **Uso em Componentes**
+
+### **✅ DO: Usar Zustand para Estado de UI**
 
 ```typescript
-// ✅ DO: Integrar no AuthProvider
-function AuthSync({ children }: { children: ReactNode }) {
-  useAuthSync();
-  return <>{children}</>;
-}
+// ✅ DO: Usar Zustand para estado de UI (não autenticação)
+import { useUIStore } from '@/lib/stores/ui.store';
 
-export function AuthProvider({ children }: AuthProviderProps) {
+export function ProfileEditor() {
+  const { isEditing, setIsEditing } = useUIStore();
+  
   return (
-    <SessionProvider>
-      <AuthSync>{children}</AuthSync>
-    </SessionProvider>
+    <div>
+      {isEditing ? <EditForm /> : <ViewMode />}
+      <button onClick={() => setIsEditing(!isEditing)}>
+        {isEditing ? 'Cancelar' : 'Editar'}
+      </button>
+    </div>
   );
 }
 ```
 
-## **Uso em Componentes**
-
-### **✅ DO: Usar Store Hooks**
+### **❌ DON'T: Usar Zustand para Autenticação**
 
 ```typescript
-// ✅ DO: Usar hooks do store
-import { useAuthStore } from '@/lib/stores/auth.store';
+// ❌ DON'T: NÃO usar Zustand para autenticação
+import { useAuthStore } from '@/lib/stores/auth.store'; // NÃO EXISTE MAIS
+
+// ✅ DO: Usar useSession() do NextAuth
+import { useSession } from "next-auth/react";
 
 export function UserProfile() {
-  const { user, isAuthenticated, setUser } = useAuthStore();
+  const { data: session } = useSession();
   
-  if (!isAuthenticated) return <LoginButton />;
+  if (!session?.user) return <LoginButton />;
   
-  return <div>Welcome, {user?.name}!</div>;
-}
-```
-
-### **❌ DON'T: Acessar Store Diretamente**
-
-```typescript
-// ❌ DON'T: Acessar store diretamente
-import { useAuthStore } from '@/lib/stores/auth.store';
-
-export function UserProfile() {
-  const store = useAuthStore.getState(); // Não faça isso
-  return <div>{store.user?.name}</div>;
+  return <div>Welcome, {session.user.name}!</div>;
 }
 ```
 
@@ -213,6 +206,6 @@ export const useAuthStore = create<AuthState>()(
 ## **Referências**
 
 - [Zustand Documentation](https://zustand-demo.pmnd.rs/)
-- [NextAuth Integration](mdc:src/hooks/useAuthSync.ts)
-- [Auth Store Example](mdc:src/lib/stores/auth.store.ts)
-- [Onboarding Store Example](mdc:src/lib/stores/onboarding.store.ts)
+- [Autenticação: Middleware + Cookies](mdc:.cursor/rules/pegasus-platform.mdc)
+- [NextAuth.js Documentation](https://next-auth.js.org/)
+- **Nota:** Zustand não é mais usado para autenticação. Veja [pegasus-platform.mdc](mdc:.cursor/rules/pegasus-platform.mdc) para a abordagem atual.

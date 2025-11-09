@@ -35,9 +35,30 @@ interface VersionSwitcherProps {
   user?: UserInfo | null;
 }
 
+/**
+ * Formata o role para exibição
+ */
+function formatRole(role?: string | null): string {
+  if (!role) return "Athlete";
+
+  const roleMap: Record<string, string> = {
+    OWNER: "Proprietário",
+    ADMIN: "Administrador",
+    ORGANIZER: "Organizador",
+    ATHLETE: "Atleta",
+  };
+
+  return roleMap[role] || role.charAt(0) + role.slice(1).toLowerCase();
+}
+
 export function VersionSwitcher({ tenant, user }: VersionSwitcherProps) {
   const [selectedTenant, setSelectedTenant] = React.useState(tenant.name);
   const { isMobile, openMobile } = useSidebar();
+
+  // Atualizar selectedTenant quando tenant.name mudar
+  React.useEffect(() => {
+    setSelectedTenant(tenant.name);
+  }, [tenant.name]);
 
   // No mobile, quando a sidebar está aberta, desabilitar o dropdown
   // para evitar conflito com o SidebarTrigger no header
@@ -79,7 +100,7 @@ export function VersionSwitcher({ tenant, user }: VersionSwitcherProps) {
                   {user?.name || user?.email?.split("@")[0] || "Usuário"}
                 </span>
                 <span className="text-muted-foreground truncate text-xs">
-                  {user?.role || "Athlete"}
+                  {formatRole(user?.role)}
                 </span>
               </div>
               <ChevronsUpDown className="ml-auto" />

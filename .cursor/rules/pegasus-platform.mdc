@@ -56,31 +56,44 @@ alwaysApply: true
   // Não editar diretamente node_modules/@/components/ui/button.tsx
   ```
 
-- **Zustand + TanStack Query**
-  - **Zustand:**
-    - Criar um store por domínio (`useAuthStore`, `useEventStore`, `useRankingStore`)
-    - **Persistência:**
-      - `sessionStorage` → Sessões e tokens (ex: Auth)
-      - `localStorage` → Preferências (tema, idioma)
-    - Utilizar `devtools()` apenas em modo dev
-    - Evitar dependências cíclicas entre stores
-    - **Exemplo:**
+- **Autenticação e Autorização (Middleware + Cookies)**
+  - **Autenticação:**
+    - Usar **NextAuth.js** para autenticação (OAuth, JWT)
+    - **Middleware do Next.js** sincroniza dados da sessão em cookies acessíveis no cliente
+    - Cookies são criados automaticamente pelo middleware quando há sessão ativa
+    - **NÃO usar Zustand para autenticação** - dados vêm de cookies ou `useSession()` do NextAuth
+    - **Exemplo de uso no cliente:**
 
     ```typescript
-    // ✅ DO: Store isolado por domínio
-    export const useAuthStore = create<AuthState>()(
-      persist(
-        (set) => ({
-          user: null,
-          setUser: (user) => set({ user }),
-        }),
-        {
-          name: 'auth-storage',
-          storage: createJSONStorage(() => sessionStorage),
-        }
-      )
-    );
+    // ✅ DO: Usar useSession() do NextAuth em componentes client
+    import { useSession } from "next-auth/react";
+
+    export function UserProfile() {
+      const { data: session, status } = useSession();
+      
+      if (status === "loading") return <Loading />;
+      if (!session?.user) return <LoginButton />;
+      
+      return <div>Welcome, {session.user.name}!</div>;
+    }
     ```
+
+    ```typescript
+    // ✅ DO: Ler cookies diretamente quando necessário (SSR ou client-side)
+    import { getAuthUserFromCookies } from "@/lib/utils/cookies";
+
+    export function ClientComponent() {
+      const user = getAuthUserFromCookies();
+      // user pode ser null se não autenticado
+    }
+    ```
+
+  - **Middleware:**
+    - Middleware sincroniza `session.user` → cookies `auth.user.*`
+    - Cookies são acessíveis no cliente via `getCookie()` ou `getAuthUserFromCookies()`
+    - Cookies são limpos automaticamente quando não há sessão
+    - **Proteção de rotas:** Middleware redireciona usuários não autenticados para `/login`
+    - **Onboarding:** Middleware redireciona usuários com `needsOnboarding: true` para `/onboarding`
 
   - **TanStack Query:**
     - Query keys devem sempre incluir `tenantId` para isolamento multi-tenant

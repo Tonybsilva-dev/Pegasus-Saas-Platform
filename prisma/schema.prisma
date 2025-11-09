@@ -93,21 +93,21 @@ model Tenant {
 }
 
 // ============================================
-// USER & AUTHENTICATION (Auth.js + SSO)
+// USER & AUTHENTICATION (Better Auth + Multi-tenant)
 // ============================================
 
 model User {
-  id             String    @id @default(cuid())
-  tenantId       String
+  id             String   @id @default(cuid())
+  tenantId       String // Multi-tenant support
   email          String
-  name           String?
-  image          String? // NextAuth padrão
-  role           Role      @default(ATHLETE)
-  isActive       Boolean   @default(true)
-  emailVerified  DateTime?
+  name           String // Better Auth requer name obrigatório
+  image          String?
+  role           Role     @default(ATHLETE) // Campo customizado para RBAC
+  isActive       Boolean  @default(true) // Campo customizado
+  emailVerified  Boolean  @default(false) // Better Auth usa Boolean
   hashedPassword String? // Opcional (SSO users podem não ter)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
 
   // Relations
   tenant        Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -116,24 +116,26 @@ model User {
   eventsCreated Event[]      @relation("UserEventsCreated")
   teamMembers   TeamMember[]
 
-  @@unique([tenantId, email])
+  @@unique([tenantId, email]) // Multi-tenant: email único por tenant
   @@index([tenantId])
   @@index([email])
   @@map("users")
 }
 
 // ============================================
-// AUTH.JS PRISMA ADAPTER (Session & Account)
+// BETTER AUTH - SESSION (com suporte multi-tenant)
 // ============================================
 
 model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  tenantId     String
-  expires      DateTime
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id        String   @id @default(cuid())
+  token     String   @unique // Better Auth usa "token" em vez de "sessionToken"
+  userId    String
+  tenantId  String // Multi-tenant support
+  expiresAt DateTime // Better Auth usa "expiresAt" em vez de "expires"
+  ipAddress String? // Better Auth: opcional
+  userAgent String? // Better Auth: opcional
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -141,34 +143,54 @@ model Session {
 
   @@index([userId])
   @@index([tenantId])
-  @@index([sessionToken])
+  @@index([token])
   @@map("sessions")
 }
 
+// ============================================
+// BETTER AUTH - ACCOUNT (com suporte multi-tenant)
+// ============================================
+
 model Account {
-  id                String   @id @default(cuid())
-  userId            String
-  tenantId          String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?  @db.Text
-  access_token      String?  @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?  @db.Text
-  session_state     String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                    String    @id @default(cuid())
+  userId                String
+  tenantId              String // Multi-tenant support
+  accountId             String // Better Auth: "accountId" em vez de "providerAccountId"
+  providerId            String // Better Auth: "providerId" em vez de "provider"
+  accessToken           String?   @db.Text // Better Auth: camelCase
+  refreshToken          String?   @db.Text // Better Auth: camelCase
+  idToken               String?   @db.Text // Better Auth: camelCase
+  accessTokenExpiresAt  DateTime? // Better Auth: DateTime em vez de Int
+  refreshTokenExpiresAt DateTime? // Better Auth: novo campo
+  scope                 String?
+  password              String? // Better Auth: para email/password auth
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([provider, providerAccountId])
+  @@unique([providerId, accountId]) // Better Auth: unique por providerId + accountId
   @@index([userId])
   @@index([tenantId])
   @@map("accounts")
+}
+
+// ============================================
+// BETTER AUTH - VERIFICATION
+// ============================================
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String // Email ou telefone
+  value      String // Código de verificação
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  @@unique([identifier, value])
+  @@index([identifier])
+  @@map("verifications")
 }
 
 // ============================================
