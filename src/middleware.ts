@@ -6,26 +6,26 @@ import { env } from "@/core/env";
 import { prisma } from "@/core/prisma";
 
 /**
- * Proxy para roteamento, rewrites, redirects e autenticação
- * Intercepta requisições HTTP e aplica lógica de roteamento e autenticação
+ * Middleware para autenticação e sincronização de cookies
+ * Gerencia sessão, autenticação e dados do usuário em cookies
  *
  * Responsabilidades:
  * - Autenticação e verificação de sessão
  * - Sincronização de dados da sessão em cookies
- * - Rewrites de URLs
- * - Redirects condicionais (onboarding, login)
- * - Isolamento de tenant via headers e cookies
  * - Cálculo de needsOnboarding
+ * - Redirecionamento para onboarding quando necessário
+ * - Isolamento de tenant via cookies
  *
- * Baseado na documentação do Next.js 16
- * Referência: https://nextjs.org/docs/app/api-reference/file-conventions/proxy
+ * Baseado na documentação do Next.js 16 e Better Auth
+ * Referência: https://nextjs.org/docs/app/guides/authentication
  */
-export async function proxy(request: NextRequest) {
+export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Log SEMPRE no início para debug (mesmo em produção para troubleshooting)
-  // Usar console.error para garantir que apareça no terminal
-  console.error("🔵 [Proxy] INÍCIO - pathname:", pathname);
+  // Log em desenvolvimento
+  if (env.NODE_ENV === "development") {
+    console.log("[Middleware] Processando autenticação:", pathname);
+  }
 
   // Rotas públicas que não precisam de autenticação
   const publicRoutes = [
@@ -44,22 +44,32 @@ export async function proxy(request: NextRequest) {
     headers: request.headers,
   });
 
-  console.error("🟢 [Proxy] Sessão obtida:", {
-    pathname,
-    isPublicRoute,
-    hasSession: !!session,
-    hasUser: !!session?.user,
-    userEmail: session?.user?.email,
-    userId: (session?.user as { id?: string })?.id,
-  });
+  // Debug em desenvolvimento
+  if (env.NODE_ENV === "development") {
+    const sessionUser = session?.user as {
+      id?: string;
+      tenantId?: string;
+      role?: string;
+      email?: string;
+    };
+    console.log("[Middleware] Estado da sessão:", {
+      pathname,
+      isPublicRoute,
+      hasSession: !!session,
+      hasUser: !!session?.user,
+      userEmail: sessionUser?.email,
+      userId: sessionUser?.id,
+    });
+  }
 
   // Criar resposta base
   const response: NextResponse = NextResponse.next();
 
   // Se não autenticado e tentando acessar rota protegida, redirecionar para login
   if (!session?.user) {
-    // Se for rota pública, permitir acesso e limpar cookies
+    // Se for rota pública, permitir acesso
     if (isPublicRoute) {
+      // Limpar cookies de autenticação
       response.cookies.delete("auth.user.id");
       response.cookies.delete("auth.user.email");
       response.cookies.delete("auth.user.name");
@@ -68,15 +78,11 @@ export async function proxy(request: NextRequest) {
       response.cookies.delete("auth.user.role");
       response.cookies.delete("auth.user.needsOnboarding");
       response.cookies.delete("auth.isAuthenticated");
-      console.error(
-        "🟡 [Proxy] Rota pública, permitindo acesso sem autenticação"
-      );
       return response;
     }
 
     // Para rotas de API, retornar 401
     if (pathname.startsWith("/api/")) {
-      console.error("🔴 [Proxy] API sem autenticação, retornando 401");
       return NextResponse.json(
         { message: "Não autenticado", error: "UNAUTHORIZED" },
         { status: 401 }
@@ -84,13 +90,10 @@ export async function proxy(request: NextRequest) {
     }
 
     // Para páginas, redirecionar para login
-    console.error(
-      "🔴 [Proxy] Página protegida sem autenticação, redirecionando para /login"
-    );
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Usuário autenticado - sincronizar dados da sessão em cookies
+  // Sincronizar dados da sessão em cookies (acessíveis no cliente)
   const user = session.user as {
     id?: string;
     email?: string;
@@ -101,12 +104,18 @@ export async function proxy(request: NextRequest) {
     needsOnboarding?: boolean;
   };
 
-  console.error("🟢 [Proxy] Usuário autenticado:", {
-    id: user.id,
-    email: user.email,
-    tenantId: user.tenantId,
-    role: user.role,
-  });
+  // Debug detalhado em desenvolvimento
+  if (env.NODE_ENV === "development") {
+    console.log("[Middleware] Dados do usuário na sessão:", {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      image: user.image,
+      tenantId: user.tenantId,
+      role: user.role,
+      needsOnboarding: user.needsOnboarding,
+    });
+  }
 
   // Sincronizar dados do usuário em cookies
   if (user.id) {
@@ -151,14 +160,11 @@ export async function proxy(request: NextRequest) {
 
   // Calcular needsOnboarding dinamicamente do banco de dados
   let needsOnboarding = false;
-  let dbUser: { tenantId: string; role: string } | null = null;
 
   if (user.id) {
     try {
-      console.error("🔵 [Proxy] Buscando dados do usuário no banco:", user.id);
-
       // Buscar dados completos do usuário do banco
-      dbUser = await prisma.user.findUnique({
+      const dbUser = await prisma.user.findUnique({
         where: { id: user.id },
         select: {
           tenantId: true,
@@ -167,20 +173,10 @@ export async function proxy(request: NextRequest) {
       });
 
       if (dbUser) {
-        console.error("🟢 [Proxy] Dados do usuário encontrados:", {
-          tenantId: dbUser.tenantId,
-          role: dbUser.role,
-        });
-
         // Buscar tenant "default"
         const defaultTenant = await prisma.tenant.findUnique({
           where: { slug: "default" },
           select: { id: true },
-        });
-
-        console.error("🟢 [Proxy] Tenant default:", {
-          defaultTenantId: defaultTenant?.id,
-          userTenantId: dbUser.tenantId,
         });
 
         // Se está no tenant "default" E tem role ATHLETE, precisa de onboarding
@@ -188,12 +184,6 @@ export async function proxy(request: NextRequest) {
           !!defaultTenant &&
           dbUser.tenantId === defaultTenant.id &&
           dbUser.role === "ATHLETE";
-
-        console.error("🟡 [Proxy] needsOnboarding calculado:", {
-          needsOnboarding,
-          isDefaultTenant: dbUser.tenantId === defaultTenant?.id,
-          isAthlete: dbUser.role === "ATHLETE",
-        });
 
         // Atualizar cookies com os valores do banco
         if (dbUser.tenantId) {
@@ -215,11 +205,20 @@ export async function proxy(request: NextRequest) {
             maxAge: 60 * 60 * 24 * 7, // 7 dias
           });
         }
-      } else {
-        console.error("🔴 [Proxy] Usuário não encontrado no banco:", user.id);
+
+        // Debug em desenvolvimento
+        if (env.NODE_ENV === "development") {
+          console.log("[Middleware] Calculado needsOnboarding:", {
+            userId: user.id,
+            tenantId: dbUser.tenantId,
+            role: dbUser.role,
+            defaultTenantId: defaultTenant?.id,
+            needsOnboarding,
+          });
+        }
       }
     } catch (error) {
-      console.error("🔴 [Proxy] Erro ao calcular needsOnboarding:", error);
+      console.error("[Middleware] Erro ao calcular needsOnboarding:", error);
       // Em caso de erro, assumir que não precisa de onboarding
       needsOnboarding = false;
     }
@@ -245,18 +244,16 @@ export async function proxy(request: NextRequest) {
 
   // Se precisa de onboarding e não está na rota de onboarding, redirecionar
   if (needsOnboarding && !pathname.startsWith("/onboarding")) {
-    console.error("🟡 [Proxy] REDIRECIONANDO PARA ONBOARDING:", {
-      pathname,
-      needsOnboarding,
-      userId: user.id,
-      tenantId: dbUser?.tenantId,
-      role: dbUser?.role,
-    });
-
+    if (env.NODE_ENV === "development") {
+      console.log("[Middleware] Redirecionando para onboarding:", {
+        pathname,
+        needsOnboarding,
+        userId: user.id,
+      });
+    }
     const redirectResponse = NextResponse.redirect(
       new URL("/onboarding", request.url)
     );
-
     // Copiar todos os cookies da resposta original para o redirect
     response.cookies.getAll().forEach((cookie) => {
       redirectResponse.cookies.set(cookie.name, cookie.value, {
@@ -267,29 +264,24 @@ export async function proxy(request: NextRequest) {
         maxAge: cookie.maxAge,
       });
     });
-
-    console.error("✅ [Proxy] Redirect criado com cookies copiados");
     return redirectResponse;
   }
 
-  // Verificar se há tenantId
-  const tenantId = dbUser?.tenantId || user.tenantId;
+  // Verificar se há tenantId (pode ter sido atualizado do banco)
+  const tenantId =
+    user.tenantId || response.cookies.get("auth.user.tenantId")?.value;
 
-  // Se não houver tenantId e não for rota pública, negar acesso
+  // Se não houver tenantId, negar acesso
   if (!tenantId && !isPublicRoute) {
-    console.error("🔴 [Proxy] Tenant não identificado, negando acesso");
-
     if (pathname.startsWith("/api/")) {
       return NextResponse.json(
         { message: "Tenant não identificado", error: "TENANT_MISSING" },
         { status: 403 }
       );
     }
-
     const redirectResponse = NextResponse.redirect(
       new URL("/login", request.url)
     );
-
     // Copiar todos os cookies da resposta original para o redirect
     response.cookies.getAll().forEach((cookie) => {
       redirectResponse.cookies.set(cookie.name, cookie.value, {
@@ -300,7 +292,6 @@ export async function proxy(request: NextRequest) {
         maxAge: cookie.maxAge,
       });
     });
-
     return redirectResponse;
   }
 
@@ -309,24 +300,14 @@ export async function proxy(request: NextRequest) {
     response.headers.set("x-tenant-id", tenantId);
   }
 
-  console.error("✅ [Proxy] Requisição processada com sucesso:", {
-    pathname,
-    tenantId,
-    needsOnboarding,
-  });
-
   return response;
 }
 
 /**
- * Configuração do matcher para definir quais rotas acionam o proxy
+ * Configuração do matcher para definir quais rotas acionam o middleware
  * Exclui arquivos estáticos, imagens e assets do Next.js
- *
- * IMPORTANTE: runtime: "nodejs" é necessário para usar Prisma no proxy
- * O Edge Runtime não suporta Prisma diretamente
  */
 export const config = {
-  runtime: "nodejs", // OBRIGATÓRIO para usar Prisma
   matcher: [
     /*
      * Match all request paths except for the ones starting with:

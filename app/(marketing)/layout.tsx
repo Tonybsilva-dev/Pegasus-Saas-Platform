@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 
+import { QueryProvider } from "@/core/providers/query.provider";
+
 export const metadata: Metadata = {
   title: "Pegasus - Plataforma de Torneios Corporativos",
   description:
     "SaaS multi-tenant para organização de torneios esportivos corporativos",
 };
 
-export default function MarketingLayout({
+function MarketingLayoutContent({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -33,5 +35,17 @@ export default function MarketingLayout({
 
       {/* TODO: Adicionar Footer para landing page aqui */}
     </div>
+  );
+}
+
+export default function MarketingLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <QueryProvider>
+      <MarketingLayoutContent>{children}</MarketingLayoutContent>
+    </QueryProvider>
   );
 }

@@ -33,6 +33,8 @@ export default function LoginPage() {
               await signIn.social({
                 provider: "google",
                 callbackURL: "/dashboard",
+                // Redirecionar novos usuários para onboarding
+                newUserCallbackURL: "/onboarding",
               });
             }}
             title="Entrar com Google"
