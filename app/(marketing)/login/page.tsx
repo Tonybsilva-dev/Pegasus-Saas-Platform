@@ -1,16 +1,11 @@
 "use client";
 
 import { LogIn } from "lucide-react";
-import { useState } from "react";
 
 import { signIn } from "@/auth/client";
 import { Button } from "@/components/ui/button";
 
 export default function LoginPage() {
-  const [loading, setLoading] = useState(false);
-
-  // Better Auth sempre tem Google se configurado
-
   return (
     <main
       className="flex min-h-[70vh] items-center justify-center p-6"
@@ -32,6 +27,8 @@ export default function LoginPage() {
             onClick={async () => {
               await signIn.social({
                 provider: "google",
+                // Redirecionar para dashboard após login
+                // O proxy verificará approvalStatus e needsOnboarding e redirecionará adequadamente
                 callbackURL: "/dashboard",
                 // Redirecionar novos usuários para onboarding
                 newUserCallbackURL: "/onboarding",
@@ -39,10 +36,9 @@ export default function LoginPage() {
             }}
             title="Entrar com Google"
             aria-label="Entrar com Google"
-            disabled={loading}
           >
             <LogIn className="mr-2 size-4" />
-            {loading ? "Carregando..." : "Entrar com Google"}
+            Entrar com Google
           </Button>
         </div>
       </div>

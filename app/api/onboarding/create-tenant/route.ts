@@ -38,20 +38,55 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Se está no tenant "default" E tem role ATHLETE, precisa de onboarding
+    // Buscar tenant "default"
     const defaultTenant = await prisma.tenant.findUnique({
       where: { slug: "default" },
       select: { id: true },
     });
 
-    const needsOnboarding =
-      defaultTenant &&
-      dbUser?.tenantId === defaultTenant.id &&
-      dbUser?.role === "ATHLETE";
+    // Verificar se já tem tenant válido (não-default)
+    if (dbUser?.tenantId) {
+      const dbTenant = await prisma.tenant.findUnique({
+        where: { id: dbUser.tenantId },
+        select: {
+          approvalStatus: true,
+          isActive: true,
+          slug: true,
+        },
+      });
+
+      // Se tem tenant válido (approved + active) e não é o tenant "default", bloquear
+      if (
+        dbTenant &&
+        dbTenant.slug !== "default" &&
+        dbTenant.approvalStatus === "APPROVED" &&
+        dbTenant.isActive === true
+      ) {
+        return NextResponse.json(
+          {
+            message:
+              "Onboarding já concluído. Você já está associado a uma organização.",
+            error: "ONBOARDING_COMPLETE",
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Verificar se precisa de onboarding
+    // needsOnboarding = true se:
+    // - tenantId é null (usuário novo sem tenant) OU
+    // - está no tenant "default" (temporário)
+    const isDefaultTenant =
+      defaultTenant && dbUser?.tenantId === defaultTenant.id;
+    const needsOnboarding = !dbUser?.tenantId || isDefaultTenant;
 
     if (!needsOnboarding) {
       return NextResponse.json(
-        { message: "Onboarding já concluído", error: "ONBOARDING_COMPLETE" },
+        {
+          message: "Onboarding já concluído",
+          error: "ONBOARDING_COMPLETE",
+        },
         { status: 400 }
       );
     }
@@ -92,18 +127,20 @@ export async function POST(request: NextRequest) {
       data: {
         name: validated.name,
         slug: validated.slug,
-        isActive: true,
+        isActive: false, // Inativo até aprovação
         plan: "FREE",
         trialEndsAt,
+        approvalStatus: "PENDING", // Status pendente até aprovação
       },
     });
 
-    // Atualizar o usuário para o novo tenant e torná-lo OWNER
+    // Atualizar o usuário para o novo tenant e torná-lo ADMIN
+    // OWNER é reservado para o desenvolvedor
     await prisma.user.update({
       where: { id: userId },
       data: {
         tenantId: newTenant.id,
-        role: "OWNER",
+        role: "ADMIN",
       },
     });
 

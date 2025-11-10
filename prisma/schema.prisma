@@ -27,6 +27,12 @@ enum TenantPlan {
   ENTERPRISE // Plano corporativo
 }
 
+enum TenantApprovalStatus {
+  PENDING // Aguardando aprovação
+  APPROVED // Aprovado
+  REJECTED // Rejeitado
+}
+
 // Tipos para eventos/modalidades/times
 enum ModalityType {
   TEAM // Esportes coletivos: futebol, vôlei etc.
@@ -69,6 +75,16 @@ model Tenant {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
+  // Approval
+  approvalStatus  TenantApprovalStatus @default(PENDING) // Status de aprovação do tenant
+  approvedAt      DateTime? // Data de aprovação
+  approvedById    String? // ID do admin que aprovou
+  rejectionReason String? // Motivo da rejeição (se aplicável)
+
+  // OTP para associação de clientes
+  otpCode      String?   @unique // Código OTP único para associação
+  otpExpiresAt DateTime? // Data de expiração do OTP
+
   // Billing
   plan                   TenantPlan @default(FREE)
   stripeCustomerId       String?    @unique
@@ -98,7 +114,7 @@ model Tenant {
 
 model User {
   id             String   @id @default(cuid())
-  tenantId       String // Multi-tenant support
+  tenantId       String? // Multi-tenant support (opcional - usuário sem tenant precisa fazer onboarding)
   email          String
   name           String // Better Auth requer name obrigatório
   image          String?
@@ -109,14 +125,23 @@ model User {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @default(now()) @updatedAt
 
+  // Approval (para clientes associados)
+  approvalStatus  TenantApprovalStatus @default(PENDING) // Status de aprovação pelo tenant
+  approvedAt      DateTime? // Data de aprovação
+  approvedById    String? // ID do admin/owner que aprovou
+  rejectionReason String? // Motivo da rejeição (se aplicável)
+
+  // Documentação para associação
+  documentNumber String? // CPF ou documento de identificação
+
   // Relations
-  tenant        Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant        Tenant?      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   sessions      Session[]
   accounts      Account[]
   eventsCreated Event[]      @relation("UserEventsCreated")
   teamMembers   TeamMember[]
 
-  @@unique([tenantId, email]) // Multi-tenant: email único por tenant
+  @@unique([tenantId, email]) // Multi-tenant: email único por tenant (permite null em tenantId)
   @@index([tenantId])
   @@index([email])
   @@map("users")
@@ -130,7 +155,7 @@ model Session {
   id        String   @id @default(cuid())
   token     String   @unique // Better Auth usa "token" em vez de "sessionToken"
   userId    String
-  tenantId  String // Multi-tenant support
+  tenantId  String? // Multi-tenant support (opcional - pode ser null se user não tem tenant)
   expiresAt DateTime // Better Auth usa "expiresAt" em vez de "expires"
   ipAddress String? // Better Auth: opcional
   userAgent String? // Better Auth: opcional
@@ -138,8 +163,8 @@ model Session {
   updatedAt DateTime @updatedAt
 
   // Relations
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([tenantId])
@@ -154,7 +179,7 @@ model Session {
 model Account {
   id                    String    @id @default(cuid())
   userId                String
-  tenantId              String // Multi-tenant support
+  tenantId              String? // Multi-tenant support (opcional - pode ser null se user não tem tenant)
   accountId             String // Better Auth: "accountId" em vez de "providerAccountId"
   providerId            String // Better Auth: "providerId" em vez de "provider"
   accessToken           String?   @db.Text // Better Auth: camelCase

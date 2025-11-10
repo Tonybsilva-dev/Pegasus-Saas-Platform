@@ -4,7 +4,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 /**
  * Adapter customizado do Better Auth que:
  * 1. Preenche automaticamente o campo tenantId ao criar Session e Account, buscando do User
- * 2. Atribui tenantId padrão (tenant "default") ao criar novos usuários
+ * 2. NÃO atribui tenantId automaticamente - usuários novos ficam sem tenant até completar onboarding
  *
  * Usa Prisma $extends (v5+) para interceptar as operações de criação
  */
@@ -12,41 +12,15 @@ export function createCustomPrismaAdapter(
   prisma: PrismaClient,
   options: { provider: string }
 ) {
-  // Função auxiliar para obter ou criar o tenant "default"
-  async function getDefaultTenantId(): Promise<string> {
-    // Buscar tenant "default" existente
-    let defaultTenant = await prisma.tenant.findUnique({
-      where: { slug: "default" },
-      select: { id: true },
-    });
-
-    // Se não existe, criar o tenant "default"
-    if (!defaultTenant) {
-      defaultTenant = await prisma.tenant.create({
-        data: {
-          name: "Default Tenant",
-          slug: "default",
-          isActive: true,
-          plan: "FREE",
-        },
-        select: { id: true },
-      });
-    }
-
-    return defaultTenant.id;
-  }
-
   // Estender o Prisma Client para interceptar operações
   const extendedPrisma = prisma.$extends({
     name: "tenantId-auto-fill",
     query: {
       user: {
         async create({ args, query }) {
-          // Se tenantId não foi fornecido, atribuir o tenant "default"
-          if (!args.data.tenantId) {
-            const defaultTenantId = await getDefaultTenantId();
-            args.data.tenantId = defaultTenantId;
-          }
+          // NÃO atribuir tenantId automaticamente
+          // Usuários novos devem ficar sem tenant até completar onboarding
+          // tenantId pode ser null - será preenchido durante o onboarding
 
           // Garantir que role seja ATHLETE por padrão se não especificado
           if (!args.data.role) {
@@ -63,14 +37,16 @@ export function createCustomPrismaAdapter(
       },
       session: {
         async create({ args, query }) {
-          // Preencher tenantId se não estiver presente
-          if (args.data?.userId && !args.data.tenantId) {
+          // Preencher tenantId do usuário se não estiver presente
+          // Pode ser null se o usuário ainda não tem tenant
+          if (args.data?.userId && args.data.tenantId === undefined) {
             const user = await prisma.user.findUnique({
               where: { id: args.data.userId },
               select: { tenantId: true },
             });
             if (user) {
-              args.data.tenantId = user.tenantId;
+              // Pode ser null - isso é permitido agora
+              args.data.tenantId = user.tenantId ?? null;
             }
           }
           return query(args);
@@ -78,27 +54,31 @@ export function createCustomPrismaAdapter(
       },
       account: {
         async create({ args, query }) {
-          // Preencher tenantId se não estiver presente
-          if (args.data?.userId && !args.data.tenantId) {
+          // Preencher tenantId do usuário se não estiver presente
+          // Pode ser null se o usuário ainda não tem tenant
+          if (args.data?.userId && args.data.tenantId === undefined) {
             const user = await prisma.user.findUnique({
               where: { id: args.data.userId },
               select: { tenantId: true },
             });
             if (user) {
-              args.data.tenantId = user.tenantId;
+              // Pode ser null - isso é permitido agora
+              args.data.tenantId = user.tenantId ?? null;
             }
           }
           return query(args);
         },
         async update({ args, query }) {
           // Preencher tenantId se userId está sendo atualizado
-          if (args.data?.userId && !args.data.tenantId) {
+          // Pode ser null se o usuário ainda não tem tenant
+          if (args.data?.userId && args.data.tenantId === undefined) {
             const user = await prisma.user.findUnique({
               where: { id: args.data.userId },
               select: { tenantId: true },
             });
             if (user) {
-              args.data.tenantId = user.tenantId;
+              // Pode ser null - isso é permitido agora
+              args.data.tenantId = user.tenantId ?? null;
             }
           }
           return query(args);
